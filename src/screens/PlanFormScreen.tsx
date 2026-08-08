@@ -1,0 +1,148 @@
+import { useEffect, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/RootNavigator';
+import { getPlans, savePlan } from '../storage/plans';
+import type { Exercise, Plan } from '../types';
+import { generateId } from '../utils/id';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'PlanForm'>;
+
+const PlanFormScreen = ({ route, navigation }: Props) => {
+  const { planId } = route.params;
+  const [name, setName] = useState('');
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+
+  useEffect(() => {
+    if (!planId) return;
+    getPlans().then((plans) => {
+      const existing = plans.find((p) => p.id === planId);
+      if (existing) {
+        setName(existing.name);
+        setExercises(existing.exercises);
+      }
+    });
+  }, [planId]);
+
+  const addExercise = () => {
+    setExercises((prev) => [
+      ...prev,
+      { id: generateId(), name: '', sets: 3, reps: 10 },
+    ]);
+  };
+
+  const updateExercise = (id: string, changes: Partial<Exercise>) => {
+    setExercises((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, ...changes } : e))
+    );
+  };
+
+  const removeExercise = (id: string) => {
+    setExercises((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const handleSave = async () => {
+    const plan: Plan = {
+      id: planId ?? generateId(),
+      name: name.trim() || 'Untitled Plan',
+      exercises,
+    };
+    await savePlan(plan);
+    navigation.goBack();
+  };
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.label}>Plan name</Text>
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+        placeholder="e.g. Push Day"
+      />
+
+      <Text style={styles.label}>Exercises</Text>
+      {exercises.map((exercise) => (
+        <View key={exercise.id} style={styles.exerciseRow}>
+          <TextInput
+            style={[styles.input, styles.exerciseName]}
+            value={exercise.name}
+            onChangeText={(text) => updateExercise(exercise.id, { name: text })}
+            placeholder="Exercise name"
+          />
+          <TextInput
+            style={[styles.input, styles.numberInput]}
+            value={String(exercise.sets)}
+            onChangeText={(text) =>
+              updateExercise(exercise.id, { sets: Number(text) || 0 })
+            }
+            placeholder="Sets"
+            keyboardType="number-pad"
+          />
+          <TextInput
+            style={[styles.input, styles.numberInput]}
+            value={String(exercise.reps)}
+            onChangeText={(text) =>
+              updateExercise(exercise.id, { reps: Number(text) || 0 })
+            }
+            placeholder="Reps"
+            keyboardType="number-pad"
+          />
+          <Pressable onPress={() => removeExercise(exercise.id)}>
+            <Text style={styles.removeText}>✕</Text>
+          </Pressable>
+        </View>
+      ))}
+
+      <Pressable style={styles.addExerciseButton} onPress={addExercise}>
+        <Text style={styles.addExerciseText}>+ Add Exercise</Text>
+      </Pressable>
+
+      <Pressable style={styles.saveButton} onPress={handleSave}>
+        <Text style={styles.saveButtonText}>Save Plan</Text>
+      </Pressable>
+    </ScrollView>
+  );
+};
+
+export default PlanFormScreen;
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { padding: 16 },
+  label: { fontSize: 14, color: '#666', marginTop: 16, marginBottom: 8 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  exerciseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  exerciseName: { flex: 2 },
+  numberInput: { flex: 1, textAlign: 'center' },
+  removeText: { fontSize: 18, color: '#c00', paddingHorizontal: 4 },
+  addExerciseButton: { paddingVertical: 12, alignItems: 'center' },
+  addExerciseText: { color: '#2f6feb', fontSize: 16 },
+  saveButton: {
+    backgroundColor: '#2f6feb',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 32,
+  },
+  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});
