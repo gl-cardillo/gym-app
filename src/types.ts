@@ -10,3 +10,29 @@ export type Plan = {
   name: string;
   exercises: Exercise[];
 };
+
+export type LoggedSet = {
+  id: string;
+  targetReps: number;
+  weight: number | null;
+  reps: number | null;
+  completed: boolean;
+};
+
+export type LoggedExercise = {
+  id: string;
+  exerciseId: string;
+  name: string;
+  targetSets: number;
+  targetReps: number;
+  sets: LoggedSet[];
+};
+
+export type Workout = {
+  id: string;
+  planId: string;
+  planName: string;
+  startedAt: string;
+  completedAt: string | null;
+  exercises: LoggedExercise[];
+};

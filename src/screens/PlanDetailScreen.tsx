@@ -1,26 +1,30 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { deletePlan, getPlans } from '../storage/plans';
-import type { Plan } from '../types';
+import { getWorkoutsForPlan, saveWorkout } from '../storage/workouts';
+import type { Plan, Workout } from '../types';
+import { createWorkoutFromPlan } from '../utils/workout';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'>;
 
-export default function PlanDetailScreen({ route, navigation }: Props) {
+const PlanDetailScreen = ({ route, navigation }: Props) => {
   const { planId } = route.params;
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       getPlans().then((plans) => {
         setPlan(plans.find((p) => p.id === planId) ?? null);
       });
+      getWorkoutsForPlan(planId).then(setWorkouts);
     }, [planId])
   );
 
-  function handleDelete() {
+  const handleDelete = () => {
     Alert.alert('Delete plan', 'Are you sure you want to delete this plan?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -32,7 +36,14 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
         },
       },
     ]);
-  }
+  };
+
+  const handleStartWorkout = async () => {
+    if (!plan) return;
+    const workout = createWorkoutFromPlan(plan);
+    await saveWorkout(workout);
+    navigation.navigate('WorkoutSession', { workoutId: workout.id });
+  };
 
   if (!plan) {
     return (
@@ -43,7 +54,7 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{plan.name}</Text>
 
       {plan.exercises.length === 0 ? (
@@ -59,6 +70,14 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
         ))
       )}
 
+      <Pressable
+        style={styles.startButton}
+        onPress={handleStartWorkout}
+        disabled={plan.exercises.length === 0}
+      >
+        <Text style={styles.startButtonText}>Start Workout</Text>
+      </Pressable>
+
       <View style={styles.actions}>
         <Pressable
           style={styles.editButton}
@@ -70,12 +89,53 @@ export default function PlanDetailScreen({ route, navigation }: Props) {
           <Text style={styles.deleteButtonText}>Delete</Text>
         </Pressable>
       </View>
-    </View>
+
+      <Text style={styles.historyTitle}>History</Text>
+      {workouts.length === 0 ? (
+        <Text style={styles.emptyText}>No workouts logged yet.</Text>
+      ) : (
+        workouts.map((workout) => (
+          <Pressable
+            key={workout.id}
+            style={styles.workoutRow}
+            onPress={() => navigation.navigate('WorkoutSession', { workoutId: workout.id })}
+          >
+            <Text style={styles.workoutDate}>{formatDate(workout.startedAt)}</Text>
+            <Text style={styles.workoutMeta}>
+              {countLoggedSets(workout)}/{countTotalSets(workout)} sets logged
+              {workout.completedAt ? ' · completed' : ' · in progress'}
+            </Text>
+          </Pressable>
+        ))
+      )}
+    </ScrollView>
   );
-}
+};
+
+export default PlanDetailScreen;
+
+const countTotalSets = (workout: Workout): number => {
+  return workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
+};
+
+const countLoggedSets = (workout: Workout): number => {
+  return workout.exercises.reduce(
+    (sum, exercise) => sum + exercise.sets.filter((set) => set.completed).length,
+    0
+  );
+};
+
+const formatDate = (iso: string): string => {
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1 },
+  content: { padding: 16, paddingBottom: 32 },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
   emptyText: { color: '#666' },
   exerciseRow: {
@@ -86,7 +146,15 @@ const styles = StyleSheet.create({
   },
   exerciseName: { fontSize: 16, fontWeight: '600' },
   exerciseMeta: { color: '#666', marginTop: 2 },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 24 },
+  startButton: {
+    backgroundColor: '#1a9c53',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  startButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  actions: { flexDirection: 'row', gap: 12, marginTop: 12 },
   editButton: {
     flex: 1,
     backgroundColor: '#2f6feb',
@@ -103,4 +171,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteButtonText: { color: '#c00', fontSize: 16, fontWeight: '600' },
+  historyTitle: { fontSize: 18, fontWeight: '700', marginTop: 28, marginBottom: 12 },
+  workoutRow: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f2f2f2',
+    marginBottom: 8,
+  },
+  workoutDate: { fontSize: 15, fontWeight: '600' },
+  workoutMeta: { color: '#666', marginTop: 2 },
 });
