@@ -61,12 +61,21 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
         <Text style={styles.emptyText}>No exercises in this plan.</Text>
       ) : (
         plan.exercises.map((exercise) => (
-          <View key={exercise.id} style={styles.exerciseRow}>
+          <Pressable
+            key={exercise.id}
+            style={styles.exerciseRow}
+            onPress={() =>
+              navigation.navigate('ExerciseProgress', {
+                exerciseId: exercise.id,
+                exerciseName: exercise.name || 'Untitled',
+              })
+            }
+          >
             <Text style={styles.exerciseName}>{exercise.name || 'Untitled'}</Text>
             <Text style={styles.exerciseMeta}>
               {exercise.sets} sets x {exercise.reps} reps
             </Text>
-          </View>
+          </Pressable>
         ))
       )}
 
