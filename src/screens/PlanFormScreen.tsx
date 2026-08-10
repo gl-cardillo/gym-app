@@ -48,6 +48,16 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
     setExercises((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const moveExercise = (index: number, direction: -1 | 1) => {
+    setExercises((prev) => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
   const handleSave = async () => {
     const plan: Plan = {
       id: planId ?? generateId(),
@@ -69,8 +79,33 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
       />
 
       <Text style={styles.label}>Exercises</Text>
-      {exercises.map((exercise) => (
+      {exercises.map((exercise, index) => (
         <View key={exercise.id} style={styles.exerciseRow}>
+          <View style={styles.reorderColumn}>
+            <Pressable
+              onPress={() => moveExercise(index, -1)}
+              disabled={index === 0}
+              hitSlop={6}
+            >
+              <Text style={[styles.reorderText, index === 0 && styles.reorderTextDisabled]}>
+                ▲
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => moveExercise(index, 1)}
+              disabled={index === exercises.length - 1}
+              hitSlop={6}
+            >
+              <Text
+                style={[
+                  styles.reorderText,
+                  index === exercises.length - 1 && styles.reorderTextDisabled,
+                ]}
+              >
+                ▼
+              </Text>
+            </Pressable>
+          </View>
           <TextInput
             style={[styles.input, styles.exerciseName]}
             value={exercise.name}
@@ -131,6 +166,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
+  reorderColumn: { alignItems: 'center', justifyContent: 'center' },
+  reorderText: { fontSize: 14, color: '#2f6feb', paddingVertical: 2 },
+  reorderTextDisabled: { color: '#ccc' },
   exerciseName: { flex: 2 },
   numberInput: { flex: 1, textAlign: 'center' },
   removeText: { fontSize: 18, color: '#c00', paddingHorizontal: 4 },
