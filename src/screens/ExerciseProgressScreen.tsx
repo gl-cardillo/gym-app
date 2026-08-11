@@ -11,13 +11,13 @@ type Props = NativeStackScreenProps<RootStackParamList, "ExerciseProgress">;
 const CHART_HEIGHT = 140;
 
 const ExerciseProgressScreen = ({ route }: Props) => {
-  const { exerciseId, exerciseName } = route.params;
+  const { exerciseName } = route.params;
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
 
   useFocusEffect(
     useCallback(() => {
-      getExerciseHistory(exerciseId).then(setHistory);
-    }, [exerciseId]),
+      getExerciseHistory(exerciseName).then(setHistory);
+    }, [exerciseName]),
   );
 
   const maxWeight = history.reduce(
@@ -60,7 +60,10 @@ const ExerciseProgressScreen = ({ route }: Props) => {
           <Text style={styles.sectionTitle}>History</Text>
           {[...history].reverse().map((entry) => (
             <View key={entry.workoutId} style={styles.historyRow}>
-              <Text style={styles.historyDate}>{formatDate(entry.date)}</Text>
+              <View>
+                <Text style={styles.historyDate}>{formatDate(entry.date)}</Text>
+                <Text style={styles.historyPlan}>{entry.planName}</Text>
+              </View>
               <Text style={styles.historyWeight}>{entry.topWeight} lbs</Text>
             </View>
           ))}
@@ -119,5 +122,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   historyDate: { fontSize: 15, fontWeight: "600" },
+  historyPlan: { fontSize: 12, color: "#666", marginTop: 2 },
   historyWeight: { fontSize: 15, color: "#333" },
 });

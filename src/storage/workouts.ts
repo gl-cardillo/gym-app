@@ -5,6 +5,7 @@ const STORAGE_KEY = "gym-app:workouts";
 
 export type ExerciseHistoryEntry = {
   workoutId: string;
+  planName: string;
   date: string;
   topWeight: number;
 };
@@ -24,20 +25,22 @@ export const getWorkoutsForPlan = async (
 };
 
 export const getExerciseHistory = async (
-  exerciseId: string,
+  exerciseName: string,
 ): Promise<ExerciseHistoryEntry[]> => {
+  const normalized = exerciseName.trim().toLowerCase();
   const workouts = await getWorkouts();
   const entries: ExerciseHistoryEntry[] = [];
 
   for (const workout of workouts) {
     for (const exercise of workout.exercises) {
-      if (exercise.exerciseId !== exerciseId) continue;
+      if (exercise.name.trim().toLowerCase() !== normalized) continue;
       const weights = exercise.sets
         .filter((set) => set.completed && set.weight !== null)
         .map((set) => set.weight as number);
       if (weights.length === 0) continue;
       entries.push({
         workoutId: workout.id,
+        planName: workout.planName,
         date: workout.startedAt,
         topWeight: Math.max(...weights),
       });

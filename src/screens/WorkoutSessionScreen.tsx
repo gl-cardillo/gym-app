@@ -140,7 +140,15 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
         {workout.exercises.map((exercise) => (
           <View key={exercise.id} style={styles.exerciseBlock}>
-            <Text style={styles.exerciseName}>{exercise.name || "Untitled"}</Text>
+            <Pressable
+              onPress={() =>
+                navigation.navigate("ExerciseProgress", {
+                  exerciseName: exercise.name || "Untitled",
+                })
+              }
+            >
+              <Text style={styles.exerciseName}>{exercise.name || "Untitled"}</Text>
+            </Pressable>
             <Text style={styles.exerciseTarget}>
               Target: {exercise.targetSets} x {exercise.targetReps}
             </Text>
@@ -257,7 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#f2f2f2",
   },
-  exerciseName: { fontSize: 16, fontWeight: "600" },
+  exerciseName: { fontSize: 16, fontWeight: "600", color: "#2f6feb" },
   exerciseTarget: { color: "#666", marginTop: 2, marginBottom: 10 },
   setHeaderRow: { flexDirection: "row", marginBottom: 6 },
   setHeaderCell: { fontSize: 12, color: "#666", fontWeight: "600" },
