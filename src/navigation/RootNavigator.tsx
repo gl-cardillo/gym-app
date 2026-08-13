@@ -1,5 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import DashboardScreen from '../screens/DashboardScreen';
 import PlansListScreen from '../screens/PlansListScreen';
 import PlanFormScreen from '../screens/PlanFormScreen';
 import PlanDetailScreen from '../screens/PlanDetailScreen';
@@ -7,6 +8,7 @@ import WorkoutSessionScreen from '../screens/WorkoutSessionScreen';
 import ExerciseProgressScreen from '../screens/ExerciseProgressScreen';
 
 export type RootStackParamList = {
+  Dashboard: undefined;
   PlansList: undefined;
   PlanForm: { planId?: string };
   PlanDetail: { planId: string };
@@ -19,7 +21,12 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const RootNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="PlansList">
+      <Stack.Navigator initialRouteName="Dashboard">
+        <Stack.Screen
+          name="Dashboard"
+          component={DashboardScreen}
+          options={{ title: 'Dashboard' }}
+        />
         <Stack.Screen
           name="PlansList"
           component={PlansListScreen}
