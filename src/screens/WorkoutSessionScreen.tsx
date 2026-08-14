@@ -13,6 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { deleteWorkout, getWorkouts, saveWorkout } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
+import { createLoggedExercise } from "../utils/workout";
 import type { LoggedSet, Workout } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkoutSession">;
@@ -25,6 +26,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [restEndAt, setRestEndAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [unit, setUnit] = useState<WeightUnit>("lbs");
+  const [isAddingExercise, setIsAddingExercise] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState("");
+  const [newExerciseSets, setNewExerciseSets] = useState("3");
+  const [newExerciseReps, setNewExerciseReps] = useState("10");
 
   useFocusEffect(
     useCallback(() => {
@@ -95,6 +100,25 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     }
   };
 
+  const handleAddExercise = () => {
+    if (!workout) return;
+    const name = newExerciseName.trim();
+    if (!name) return;
+    const targetSets = Math.max(1, Number(newExerciseSets) || 1);
+    const targetReps = Math.max(1, Number(newExerciseReps) || 1);
+    persist({
+      ...workout,
+      exercises: [
+        ...workout.exercises,
+        createLoggedExercise(name, targetSets, targetReps),
+      ],
+    });
+    setNewExerciseName("");
+    setNewExerciseSets("3");
+    setNewExerciseReps("10");
+    setIsAddingExercise(false);
+  };
+
   const handleFinish = () => {
     if (!workout) return;
     persist({ ...workout, completedAt: new Date().toISOString() });
@@ -146,6 +170,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             <Pressable
               onPress={() =>
                 navigation.navigate("ExerciseProgress", {
+                  exerciseId: exercise.exerciseId,
                   exerciseName: exercise.name || "Untitled",
                 })
               }
@@ -207,6 +232,56 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             ))}
           </View>
         ))}
+
+        {!isCompleted && (
+          <View style={styles.addExerciseBlock}>
+            {isAddingExercise ? (
+              <>
+                <TextInput
+                  style={styles.addExerciseNameInput}
+                  value={newExerciseName}
+                  onChangeText={setNewExerciseName}
+                  placeholder="Exercise name"
+                  autoFocus
+                />
+                <View style={styles.addExerciseRow}>
+                  <TextInput
+                    style={[styles.input, styles.addExerciseNumberInput]}
+                    value={newExerciseSets}
+                    onChangeText={setNewExerciseSets}
+                    placeholder="Sets"
+                    keyboardType="number-pad"
+                  />
+                  <TextInput
+                    style={[styles.input, styles.addExerciseNumberInput]}
+                    value={newExerciseReps}
+                    onChangeText={setNewExerciseReps}
+                    placeholder="Reps"
+                    keyboardType="number-pad"
+                  />
+                </View>
+                <View style={styles.addExerciseActions}>
+                  <Pressable
+                    style={styles.addExerciseConfirmButton}
+                    onPress={handleAddExercise}
+                  >
+                    <Text style={styles.addExerciseConfirmText}>Add</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.addExerciseCancelButton}
+                    onPress={() => setIsAddingExercise(false)}
+                  >
+                    <Text style={styles.addExerciseCancelText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              <Pressable onPress={() => setIsAddingExercise(true)}>
+                <Text style={styles.addExerciseButtonText}>+ Add Exercise</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
 
         <View style={styles.actions}>
           {!isCompleted && (
@@ -299,6 +374,48 @@ const styles = StyleSheet.create({
   },
   checkboxChecked: { backgroundColor: "#2f6feb" },
   checkmark: { color: "#fff", fontWeight: "700" },
+  addExerciseBlock: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderStyle: "dashed",
+    marginBottom: 20,
+  },
+  addExerciseButtonText: {
+    color: "#2f6feb",
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  addExerciseNameInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 15,
+    backgroundColor: "#fff",
+    marginBottom: 8,
+  },
+  addExerciseRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  addExerciseNumberInput: { flex: 1 },
+  addExerciseActions: { flexDirection: "row", gap: 8 },
+  addExerciseConfirmButton: {
+    flex: 1,
+    backgroundColor: "#2f6feb",
+    borderRadius: 8,
+    padding: 10,
+    alignItems: "center",
+  },
+  addExerciseConfirmText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  addExerciseCancelButton: {
+    flex: 1,
+    backgroundColor: "#f2f2f2",
+    borderRadius: 8,
+    padding: 10,
+    alignItems: "center",
+  },
+  addExerciseCancelText: { color: "#333", fontSize: 14, fontWeight: "600" },
   actions: { flexDirection: "row", gap: 12, marginTop: 8 },
   finishButton: {
     flex: 1,

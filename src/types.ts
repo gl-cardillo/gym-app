@@ -30,7 +30,7 @@ export type LoggedExercise = {
 
 export type Workout = {
   id: string;
-  planId: string;
+  planId: string | null;
   planName: string;
   startedAt: string;
   completedAt: string | null;

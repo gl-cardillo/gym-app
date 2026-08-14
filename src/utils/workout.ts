@@ -1,5 +1,25 @@
-import { Plan, Workout } from '../types';
+import { LoggedExercise, Plan, Workout } from '../types';
 import { generateId } from './id';
+
+export const createLoggedExercise = (
+  name: string,
+  targetSets: number,
+  targetReps: number,
+  exerciseId: string = generateId(),
+): LoggedExercise => ({
+  id: generateId(),
+  exerciseId,
+  name,
+  targetSets,
+  targetReps,
+  sets: Array.from({ length: targetSets }, () => ({
+    id: generateId(),
+    targetReps,
+    weight: null,
+    reps: null,
+    completed: false,
+  })),
+});
 
 export const createWorkoutFromPlan = (plan: Plan): Workout => {
   return {
@@ -8,19 +28,17 @@ export const createWorkoutFromPlan = (plan: Plan): Workout => {
     planName: plan.name,
     startedAt: new Date().toISOString(),
     completedAt: null,
-    exercises: plan.exercises.map((exercise) => ({
-      id: generateId(),
-      exerciseId: exercise.id,
-      name: exercise.name,
-      targetSets: exercise.sets,
-      targetReps: exercise.reps,
-      sets: Array.from({ length: exercise.sets }, () => ({
-        id: generateId(),
-        targetReps: exercise.reps,
-        weight: null,
-        reps: null,
-        completed: false,
-      })),
-    })),
+    exercises: plan.exercises.map((exercise) =>
+      createLoggedExercise(exercise.name, exercise.sets, exercise.reps, exercise.id),
+    ),
   };
 };
+
+export const createEmptyWorkout = (): Workout => ({
+  id: generateId(),
+  planId: null,
+  planName: 'Quick Workout',
+  startedAt: new Date().toISOString(),
+  completedAt: null,
+  exercises: [],
+});

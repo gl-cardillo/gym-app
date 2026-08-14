@@ -13,7 +13,7 @@ export type RootStackParamList = {
   PlanForm: { planId?: string };
   PlanDetail: { planId: string };
   WorkoutSession: { workoutId: string };
-  ExerciseProgress: { exerciseName: string };
+  ExerciseProgress: { exerciseId: string; exerciseName: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

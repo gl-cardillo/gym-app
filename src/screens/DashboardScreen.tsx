@@ -3,9 +3,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { getWorkouts } from "../storage/workouts";
+import { getWorkouts, saveWorkout } from "../storage/workouts";
 import { getWeightUnit, setWeightUnit, WeightUnit } from "../storage/settings";
 import { computeDashboardStats, DashboardStats } from "../utils/stats";
+import { createEmptyWorkout } from "../utils/workout";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Dashboard">;
 
@@ -34,6 +35,12 @@ const DashboardScreen = ({ navigation }: Props) => {
     const next = unit === "lbs" ? "kg" : "lbs";
     setUnit(next);
     setWeightUnit(next);
+  };
+
+  const handleQuickWorkout = async () => {
+    const workout = createEmptyWorkout();
+    await saveWorkout(workout);
+    navigation.navigate("WorkoutSession", { workoutId: workout.id });
   };
 
   return (
@@ -96,6 +103,10 @@ const DashboardScreen = ({ navigation }: Props) => {
       ) : (
         <Text style={styles.emptyText}>No completed workouts yet.</Text>
       )}
+
+      <Pressable style={styles.quickWorkoutButton} onPress={handleQuickWorkout}>
+        <Text style={styles.quickWorkoutButtonText}>+ Quick Workout</Text>
+      </Pressable>
 
       <Pressable
         style={styles.plansButton}
@@ -166,12 +177,20 @@ const styles = StyleSheet.create({
   },
   lastWorkoutPlan: { fontSize: 16, fontWeight: "600" },
   lastWorkoutDate: { color: "#666", marginTop: 2 },
+  quickWorkoutButton: {
+    backgroundColor: "#1a9c53",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 28,
+  },
+  quickWorkoutButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   plansButton: {
     backgroundColor: "#2f6feb",
     borderRadius: 8,
     padding: 16,
     alignItems: "center",
-    marginTop: 28,
+    marginTop: 12,
   },
   plansButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });

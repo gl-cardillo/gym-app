@@ -25,15 +25,14 @@ export const getWorkoutsForPlan = async (
 };
 
 export const getExerciseHistory = async (
-  exerciseName: string,
+  exerciseId: string,
 ): Promise<ExerciseHistoryEntry[]> => {
-  const normalized = exerciseName.trim().toLowerCase();
   const workouts = await getWorkouts();
   const entries: ExerciseHistoryEntry[] = [];
 
   for (const workout of workouts) {
     for (const exercise of workout.exercises) {
-      if (exercise.name.trim().toLowerCase() !== normalized) continue;
+      if (exercise.exerciseId !== exerciseId) continue;
       const weights = exercise.sets
         .filter((set) => set.completed && set.weight !== null)
         .map((set) => set.weight as number);

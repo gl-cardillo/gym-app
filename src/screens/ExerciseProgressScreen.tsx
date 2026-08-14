@@ -12,15 +12,15 @@ type Props = NativeStackScreenProps<RootStackParamList, "ExerciseProgress">;
 const CHART_HEIGHT = 140;
 
 const ExerciseProgressScreen = ({ route }: Props) => {
-  const { exerciseName } = route.params;
+  const { exerciseId, exerciseName } = route.params;
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
   const [unit, setUnit] = useState<WeightUnit>("lbs");
 
   useFocusEffect(
     useCallback(() => {
-      getExerciseHistory(exerciseName).then(setHistory);
+      getExerciseHistory(exerciseId).then(setHistory);
       getWeightUnit().then(setUnit);
-    }, [exerciseName]),
+    }, [exerciseId]),
   );
 
   const maxWeight = history.reduce(

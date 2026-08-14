@@ -66,6 +66,7 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
             style={styles.exerciseRow}
             onPress={() =>
               navigation.navigate('ExerciseProgress', {
+                exerciseId: exercise.id,
                 exerciseName: exercise.name || 'Untitled',
               })
             }
