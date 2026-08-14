@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { getWorkouts } from "../storage/workouts";
+import { getWeightUnit, setWeightUnit, WeightUnit } from "../storage/settings";
 import { computeDashboardStats, DashboardStats } from "../utils/stats";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Dashboard">;
@@ -18,18 +19,31 @@ const EMPTY_STATS: DashboardStats = {
 
 const DashboardScreen = ({ navigation }: Props) => {
   const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
+  const [unit, setUnit] = useState<WeightUnit>("lbs");
 
   useFocusEffect(
     useCallback(() => {
       getWorkouts().then((workouts) =>
         setStats(computeDashboardStats(workouts)),
       );
+      getWeightUnit().then(setUnit);
     }, []),
   );
 
+  const toggleUnit = () => {
+    const next = unit === "lbs" ? "kg" : "lbs";
+    setUnit(next);
+    setWeightUnit(next);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Dashboard</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Dashboard</Text>
+        <Pressable style={styles.unitToggle} onPress={toggleUnit}>
+          <Text style={styles.unitToggleText}>{unit}</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
@@ -106,7 +120,20 @@ const formatDate = (iso: string): string => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 16 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  title: { fontSize: 24, fontWeight: "700" },
+  unitToggle: {
+    backgroundColor: "#f2f2f2",
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+  },
+  unitToggleText: { fontSize: 13, fontWeight: "700", color: "#2f6feb" },
   statsRow: { flexDirection: "row", gap: 12 },
   statCard: {
     flex: 1,

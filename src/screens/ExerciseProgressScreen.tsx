@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { getExerciseHistory } from "../storage/workouts";
 import type { ExerciseHistoryEntry } from "../storage/workouts";
+import { getWeightUnit, WeightUnit } from "../storage/settings";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ExerciseProgress">;
 
@@ -13,10 +14,12 @@ const CHART_HEIGHT = 140;
 const ExerciseProgressScreen = ({ route }: Props) => {
   const { exerciseName } = route.params;
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
+  const [unit, setUnit] = useState<WeightUnit>("lbs");
 
   useFocusEffect(
     useCallback(() => {
       getExerciseHistory(exerciseName).then(setHistory);
+      getWeightUnit().then(setUnit);
     }, [exerciseName]),
   );
 
@@ -64,7 +67,9 @@ const ExerciseProgressScreen = ({ route }: Props) => {
                 <Text style={styles.historyDate}>{formatDate(entry.date)}</Text>
                 <Text style={styles.historyPlan}>{entry.planName}</Text>
               </View>
-              <Text style={styles.historyWeight}>{entry.topWeight} lbs</Text>
+              <Text style={styles.historyWeight}>
+                {entry.topWeight} {unit}
+              </Text>
             </View>
           ))}
         </>

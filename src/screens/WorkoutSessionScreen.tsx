@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { deleteWorkout, getWorkouts, saveWorkout } from "../storage/workouts";
+import { getWeightUnit, WeightUnit } from "../storage/settings";
 import type { LoggedSet, Workout } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkoutSession">;
@@ -23,12 +24,14 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [restEndAt, setRestEndAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [unit, setUnit] = useState<WeightUnit>("lbs");
 
   useFocusEffect(
     useCallback(() => {
       getWorkouts().then((workouts) => {
         setWorkout(workouts.find((w) => w.id === workoutId) ?? null);
       });
+      getWeightUnit().then(setUnit);
     }, [workoutId]),
   );
 
@@ -155,7 +158,9 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
             <View style={styles.setHeaderRow}>
               <Text style={[styles.setHeaderCell, styles.setCol]}>Set</Text>
-              <Text style={[styles.setHeaderCell, styles.weightCol]}>Weight</Text>
+              <Text style={[styles.setHeaderCell, styles.weightCol]}>
+                Weight ({unit})
+              </Text>
               <Text style={[styles.setHeaderCell, styles.repsCol]}>Reps</Text>
               <Text style={[styles.setHeaderCell, styles.doneCol]}>Done</Text>
             </View>
@@ -171,7 +176,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                       weight: text === "" ? null : Number(text) || 0,
                     })
                   }
-                  placeholder="lbs"
+                  placeholder={unit}
                   keyboardType="decimal-pad"
                 />
                 <TextInput
