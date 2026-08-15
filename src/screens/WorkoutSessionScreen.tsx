@@ -8,12 +8,14 @@ import {
   TextInput,
   View,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { deleteWorkout, getWorkouts, saveWorkout } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import { createLoggedExercise, exerciseIdForName } from "../utils/workout";
+import { generateId } from "../utils/id";
 import type { LoggedSet, Workout } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkoutSession">;
@@ -51,6 +53,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
   useEffect(() => {
     if (restSecondsLeft === 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRestEndAt(null);
     }
   }, [restSecondsLeft]);
@@ -89,6 +92,77 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
           : exercise,
       ),
     });
+  };
+
+  const addSet = (exerciseId: string) => {
+    if (!workout) return;
+    persist({
+      ...workout,
+      exercises: workout.exercises.map((exercise) =>
+        exercise.id === exerciseId
+          ? {
+              ...exercise,
+              sets: [
+                ...exercise.sets,
+                {
+                  id: generateId(),
+                  targetReps: exercise.targetReps,
+                  weight: null,
+                  reps: null,
+                  completed: false,
+                },
+              ],
+            }
+          : exercise,
+      ),
+    });
+  };
+
+  const deleteSet = (exerciseId: string, setId: string) => {
+    Alert.alert("Delete set", "Remove this set from the log?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          if (!workout) return;
+          persist({
+            ...workout,
+            exercises: workout.exercises.map((exercise) =>
+              exercise.id === exerciseId
+                ? {
+                    ...exercise,
+                    sets: exercise.sets.filter((set) => set.id !== setId),
+                  }
+                : exercise,
+            ),
+          });
+        },
+      },
+    ]);
+  };
+
+  const deleteExercise = (exerciseId: string, exerciseName: string) => {
+    Alert.alert(
+      "Remove exercise",
+      `Remove "${exerciseName || "Untitled"}" and its logged sets?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => {
+            if (!workout) return;
+            persist({
+              ...workout,
+              exercises: workout.exercises.filter(
+                (exercise) => exercise.id !== exerciseId,
+              ),
+            });
+          },
+        },
+      ],
+    );
   };
 
   const toggleSetCompleted = (exerciseId: string, set: LoggedSet) => {
@@ -167,16 +241,25 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
         {workout.exercises.map((exercise) => (
           <View key={exercise.id} style={styles.exerciseBlock}>
-            <Pressable
-              onPress={() =>
-                navigation.navigate("ExerciseProgress", {
-                  exerciseId: exercise.exerciseId,
-                  exerciseName: exercise.name || "Untitled",
-                })
-              }
-            >
-              <Text style={styles.exerciseName}>{exercise.name || "Untitled"}</Text>
-            </Pressable>
+            <View style={styles.exerciseHeaderRow}>
+              <Pressable
+                style={styles.exerciseNameButton}
+                onPress={() =>
+                  navigation.navigate("ExerciseProgress", {
+                    exerciseId: exercise.exerciseId,
+                    exerciseName: exercise.name || "Untitled",
+                  })
+                }
+              >
+                <Text style={styles.exerciseName}>{exercise.name || "Untitled"}</Text>
+              </Pressable>
+              <Pressable
+                style={styles.removeExerciseButton}
+                onPress={() => deleteExercise(exercise.id, exercise.name)}
+              >
+                <Text style={styles.removeExerciseText}>✕</Text>
+              </Pressable>
+            </View>
             <Text style={styles.exerciseTarget}>
               Target: {exercise.targetSets} x {exercise.targetReps}
             </Text>
@@ -188,6 +271,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
               </Text>
               <Text style={[styles.setHeaderCell, styles.repsCol]}>Reps</Text>
               <Text style={[styles.setHeaderCell, styles.doneCol]}>Done</Text>
+              <Text style={[styles.setHeaderCell, styles.setDeleteCol]} />
             </View>
 
             {exercise.sets.map((set, index) => (
@@ -228,8 +312,21 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     {set.completed && <Text style={styles.checkmark}>✓</Text>}
                   </View>
                 </Pressable>
+                <Pressable
+                  style={styles.setDeleteCol}
+                  onPress={() => deleteSet(exercise.id, set.id)}
+                >
+                  <Text style={styles.setDeleteText}>✕</Text>
+                </Pressable>
               </View>
             ))}
+
+            <Pressable
+              style={styles.addSetButton}
+              onPress={() => addSet(exercise.id)}
+            >
+              <Text style={styles.addSetButtonText}>+ Add Set</Text>
+            </Pressable>
           </View>
         ))}
 
@@ -345,7 +442,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#f2f2f2",
   },
+  exerciseHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  exerciseNameButton: { flex: 1 },
   exerciseName: { fontSize: 16, fontWeight: "600", color: "#2f6feb" },
+  removeExerciseButton: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  removeExerciseText: { color: "#c00", fontSize: 15, fontWeight: "700" },
   exerciseTarget: { color: "#666", marginTop: 2, marginBottom: 10 },
   setHeaderRow: { flexDirection: "row", marginBottom: 6 },
   setHeaderCell: { fontSize: 12, color: "#666", fontWeight: "600" },
@@ -355,6 +467,10 @@ const styles = StyleSheet.create({
   weightCol: { flex: 1, marginRight: 8 },
   repsCol: { flex: 1, marginRight: 8 },
   doneCol: { width: 40, alignItems: "center" },
+  setDeleteCol: { width: 28, alignItems: "center" },
+  setDeleteText: { color: "#c00", fontSize: 14, fontWeight: "700" },
+  addSetButton: { alignSelf: "flex-start", marginTop: 4, padding: 4 },
+  addSetButtonText: { color: "#2f6feb", fontSize: 13, fontWeight: "600" },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
