@@ -13,7 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { deleteWorkout, getWorkouts, saveWorkout } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
-import { createLoggedExercise } from "../utils/workout";
+import { createLoggedExercise, exerciseIdForName } from "../utils/workout";
 import type { LoggedSet, Workout } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkoutSession">;
@@ -110,7 +110,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
       ...workout,
       exercises: [
         ...workout.exercises,
-        createLoggedExercise(name, targetSets, targetReps),
+        createLoggedExercise(name, targetSets, targetReps, exerciseIdForName(name)),
       ],
     });
     setNewExerciseName("");

@@ -1,5 +1,14 @@
-import { LoggedExercise, Plan, Workout } from '../types';
-import { generateId } from './id';
+import { LoggedExercise, Plan, Workout } from "../types";
+import { generateId } from "./id";
+
+export const exerciseIdForName = (name: string): string => {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug ? `custom:${slug}` : generateId();
+};
 
 export const createLoggedExercise = (
   name: string,
@@ -29,7 +38,12 @@ export const createWorkoutFromPlan = (plan: Plan): Workout => {
     startedAt: new Date().toISOString(),
     completedAt: null,
     exercises: plan.exercises.map((exercise) =>
-      createLoggedExercise(exercise.name, exercise.sets, exercise.reps, exercise.id),
+      createLoggedExercise(
+        exercise.name,
+        exercise.sets,
+        exercise.reps,
+        exercise.id,
+      ),
     ),
   };
 };
@@ -37,7 +51,7 @@ export const createWorkoutFromPlan = (plan: Plan): Workout => {
 export const createEmptyWorkout = (): Workout => ({
   id: generateId(),
   planId: null,
-  planName: 'Quick Workout',
+  planName: "Quick Workout",
   startedAt: new Date().toISOString(),
   completedAt: null,
   exercises: [],

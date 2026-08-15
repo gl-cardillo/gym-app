@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { getWorkouts, saveWorkout } from "../storage/workouts";
+import { convertStoredWeights, getWorkouts, saveWorkout } from "../storage/workouts";
 import { getWeightUnit, setWeightUnit, WeightUnit } from "../storage/settings";
 import { computeDashboardStats, DashboardStats } from "../utils/stats";
 import { createEmptyWorkout } from "../utils/workout";
@@ -31,10 +31,11 @@ const DashboardScreen = ({ navigation }: Props) => {
     }, []),
   );
 
-  const toggleUnit = () => {
+  const toggleUnit = async () => {
     const next = unit === "lbs" ? "kg" : "lbs";
+    await convertStoredWeights(unit, next);
     setUnit(next);
-    setWeightUnit(next);
+    await setWeightUnit(next);
   };
 
   const handleQuickWorkout = async () => {

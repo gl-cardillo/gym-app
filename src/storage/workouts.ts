@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Workout } from "../types";
+import { WeightUnit } from "./settings";
+import { convertWeight } from "../utils/units";
 
 const STORAGE_KEY = "gym-app:workouts";
 
@@ -63,5 +65,25 @@ export const saveWorkout = async (workout: Workout): Promise<void> => {
 export const deleteWorkout = async (id: string): Promise<void> => {
   const workouts = await getWorkouts();
   const next = workouts.filter((w) => w.id !== id);
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+};
+
+export const convertStoredWeights = async (
+  from: WeightUnit,
+  to: WeightUnit,
+): Promise<void> => {
+  if (from === to) return;
+  const workouts = await getWorkouts();
+  const next = workouts.map((workout) => ({
+    ...workout,
+    exercises: workout.exercises.map((exercise) => ({
+      ...exercise,
+      sets: exercise.sets.map((set) =>
+        set.weight === null
+          ? set
+          : { ...set, weight: convertWeight(set.weight, from, to) },
+      ),
+    })),
+  }));
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 };
