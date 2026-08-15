@@ -51,6 +51,32 @@ export const getExerciseHistory = async (
   return entries.sort((a, b) => a.date.localeCompare(b.date));
 };
 
+export const getWorkoutPRs = async (workout: Workout): Promise<string[]> => {
+  const prNames: string[] = [];
+
+  for (const exercise of workout.exercises) {
+    const weights = exercise.sets
+      .filter((set) => set.completed && set.weight !== null)
+      .map((set) => set.weight as number);
+    if (weights.length === 0) continue;
+    const sessionBest = Math.max(...weights);
+
+    const history = await getExerciseHistory(exercise.exerciseId);
+    const priorBest = history
+      .filter((entry) => entry.workoutId !== workout.id)
+      .reduce<number | null>(
+        (max, entry) => (max === null ? entry.topWeight : Math.max(max, entry.topWeight)),
+        null,
+      );
+
+    if (priorBest !== null && sessionBest > priorBest) {
+      prNames.push(exercise.name || "Untitled");
+    }
+  }
+
+  return prNames;
+};
+
 export const saveWorkout = async (workout: Workout): Promise<void> => {
   const workouts = await getWorkouts();
   const index = workouts.findIndex((w) => w.id === workout.id);

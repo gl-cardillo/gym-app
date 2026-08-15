@@ -14,6 +14,7 @@ const EMPTY_STATS: DashboardStats = {
   totalWorkouts: 0,
   currentStreakWeeks: 0,
   workoutsThisWeek: 0,
+  prsThisWeek: 0,
   lastCompletedWorkout: null,
   inProgressWorkout: null,
 };
@@ -65,6 +66,10 @@ const DashboardScreen = ({ navigation }: Props) => {
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{stats.workoutsThisWeek}</Text>
           <Text style={styles.statLabel}>This week</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{stats.prsThisWeek}</Text>
+          <Text style={styles.statLabel}>PRs this week</Text>
         </View>
       </View>
 

@@ -12,7 +12,12 @@ import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { deleteWorkout, getWorkouts, saveWorkout } from "../storage/workouts";
+import {
+  deleteWorkout,
+  getWorkoutPRs,
+  getWorkouts,
+  saveWorkout,
+} from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import { createLoggedExercise, exerciseIdForName } from "../utils/workout";
 import { generateId } from "../utils/id";
@@ -193,10 +198,20 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     setIsAddingExercise(false);
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (!workout) return;
-    persist({ ...workout, completedAt: new Date().toISOString() });
-    navigation.goBack();
+    const prNames = await getWorkoutPRs(workout);
+    await persist({ ...workout, completedAt: new Date().toISOString() });
+    if (prNames.length > 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert(
+        "New PR!",
+        `${prNames.join(", ")} — new top weight this session.`,
+        [{ text: "Nice", onPress: () => navigation.goBack() }],
+      );
+    } else {
+      navigation.goBack();
+    }
   };
 
   const handleDelete = () => {

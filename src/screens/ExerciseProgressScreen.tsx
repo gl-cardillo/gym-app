@@ -47,10 +47,20 @@ const ExerciseProgressScreen = ({ route }: Props) => {
                   maxWeight > 0
                     ? Math.max((entry.topWeight / maxWeight) * CHART_HEIGHT, 4)
                     : 4;
+                const isPR = maxWeight > 0 && entry.topWeight === maxWeight;
                 return (
                   <View key={entry.workoutId} style={styles.barColumn}>
-                    <Text style={styles.barValue}>{entry.topWeight}</Text>
-                    <View style={[styles.bar, { height: barHeight }]} />
+                    <Text style={styles.barValue}>
+                      {isPR ? "★ " : ""}
+                      {entry.topWeight}
+                    </Text>
+                    <View
+                      style={[
+                        styles.bar,
+                        { height: barHeight },
+                        isPR && styles.barPR,
+                      ]}
+                    />
                     <Text style={styles.barLabel}>
                       {formatShortDate(entry.date)}
                     </Text>
@@ -61,17 +71,26 @@ const ExerciseProgressScreen = ({ route }: Props) => {
           </ScrollView>
 
           <Text style={styles.sectionTitle}>History</Text>
-          {[...history].reverse().map((entry) => (
-            <View key={entry.workoutId} style={styles.historyRow}>
-              <View>
-                <Text style={styles.historyDate}>{formatDate(entry.date)}</Text>
-                <Text style={styles.historyPlan}>{entry.planName}</Text>
+          {[...history].reverse().map((entry) => {
+            const isPR = maxWeight > 0 && entry.topWeight === maxWeight;
+            return (
+              <View
+                key={entry.workoutId}
+                style={[styles.historyRow, isPR && styles.historyRowPR]}
+              >
+                <View>
+                  <Text style={styles.historyDate}>
+                    {formatDate(entry.date)}
+                  </Text>
+                  <Text style={styles.historyPlan}>{entry.planName}</Text>
+                </View>
+                <Text style={styles.historyWeight}>
+                  {isPR ? "★ " : ""}
+                  {entry.topWeight} {unit}
+                </Text>
               </View>
-              <Text style={styles.historyWeight}>
-                {entry.topWeight} {unit}
-              </Text>
-            </View>
-          ))}
+            );
+          })}
         </>
       )}
     </ScrollView>
@@ -117,6 +136,7 @@ const styles = StyleSheet.create({
   barColumn: { alignItems: "center", marginRight: 12, width: 40 },
   barValue: { fontSize: 11, color: "#666", marginBottom: 4 },
   bar: { width: 20, backgroundColor: "#2f6feb", borderRadius: 4 },
+  barPR: { backgroundColor: "#e8a400" },
   barLabel: { fontSize: 11, color: "#666", marginTop: 6 },
   historyRow: {
     flexDirection: "row",
@@ -125,6 +145,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#f2f2f2",
     marginBottom: 8,
+  },
+  historyRowPR: {
+    backgroundColor: "#fff6e0",
+    borderWidth: 1,
+    borderColor: "#e8a400",
   },
   historyDate: { fontSize: 15, fontWeight: "600" },
   historyPlan: { fontSize: 12, color: "#666", marginTop: 2 },

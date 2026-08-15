@@ -4,6 +4,7 @@ export type DashboardStats = {
   totalWorkouts: number;
   currentStreakWeeks: number;
   workoutsThisWeek: number;
+  prsThisWeek: number;
   lastCompletedWorkout: Workout | null;
   inProgressWorkout: Workout | null;
 };
@@ -19,6 +20,34 @@ const startOfWeek = (date: Date): Date => {
 
 const weekKey = (date: Date): string =>
   startOfWeek(date).toISOString().slice(0, 10);
+
+const prsThisWeek = (completed: Workout[]): number => {
+  const bestByExercise = new Map<string, number>();
+  const thisWeekKey = weekKey(new Date());
+  let count = 0;
+
+  for (const workout of [...completed].sort((a, b) =>
+    (a.completedAt as string).localeCompare(b.completedAt as string),
+  )) {
+    for (const exercise of workout.exercises) {
+      const weights = exercise.sets
+        .filter((set) => set.completed && set.weight !== null)
+        .map((set) => set.weight as number);
+      if (weights.length === 0) continue;
+      const sessionBest = Math.max(...weights);
+      const priorBest = bestByExercise.get(exercise.exerciseId) ?? null;
+
+      if (priorBest === null || sessionBest > priorBest) {
+        if (weekKey(new Date(workout.completedAt as string)) === thisWeekKey) {
+          count += 1;
+        }
+        bestByExercise.set(exercise.exerciseId, sessionBest);
+      }
+    }
+  }
+
+  return count;
+};
 
 const currentStreakWeeks = (completedDates: Date[]): number => {
   const weeksWithWorkout = new Set(completedDates.map(weekKey));
@@ -64,6 +93,7 @@ export const computeDashboardStats = (workouts: Workout[]): DashboardStats => {
     totalWorkouts: completed.length,
     currentStreakWeeks: currentStreakWeeks(completedDates),
     workoutsThisWeek,
+    prsThisWeek: prsThisWeek(completed),
     lastCompletedWorkout,
     inProgressWorkout,
   };
