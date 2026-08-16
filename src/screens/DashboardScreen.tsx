@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { convertStoredWeights, getWorkouts, saveWorkout } from "../storage/workouts";
+import { convertStoredBodyweights } from "../storage/bodyweight";
 import { getWeightUnit, setWeightUnit, WeightUnit } from "../storage/settings";
 import { computeDashboardStats, DashboardStats } from "../utils/stats";
 import { createEmptyWorkout } from "../utils/workout";
@@ -35,6 +36,7 @@ const DashboardScreen = ({ navigation }: Props) => {
   const toggleUnit = async () => {
     const next = unit === "lbs" ? "kg" : "lbs";
     await convertStoredWeights(unit, next);
+    await convertStoredBodyweights(unit, next);
     setUnit(next);
     await setWeightUnit(next);
   };
@@ -120,6 +122,13 @@ const DashboardScreen = ({ navigation }: Props) => {
       >
         <Text style={styles.plansButtonText}>My Plans</Text>
       </Pressable>
+
+      <Pressable
+        style={styles.bodyweightButton}
+        onPress={() => navigation.navigate("Bodyweight")}
+      >
+        <Text style={styles.bodyweightButtonText}>Bodyweight Log</Text>
+      </Pressable>
     </ScrollView>
   );
 };
@@ -199,4 +208,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   plansButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  bodyweightButton: {
+    backgroundColor: "#f2f2f2",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  bodyweightButtonText: { color: "#333", fontSize: 16, fontWeight: "600" },
 });

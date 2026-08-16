@@ -73,7 +73,7 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
           >
             <Text style={styles.exerciseName}>{exercise.name || 'Untitled'}</Text>
             <Text style={styles.exerciseMeta}>
-              {exercise.sets} sets x {exercise.reps} reps
+              {exercise.sets} sets x {exercise.reps} reps · {exercise.restSeconds ?? 90}s rest
             </Text>
           </Pressable>
         ))

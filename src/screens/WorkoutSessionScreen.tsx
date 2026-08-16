@@ -19,13 +19,15 @@ import {
   saveWorkout,
 } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
-import { createLoggedExercise, exerciseIdForName } from "../utils/workout";
+import {
+  createLoggedExercise,
+  DEFAULT_REST_SECONDS,
+  exerciseIdForName,
+} from "../utils/workout";
 import { generateId } from "../utils/id";
 import type { LoggedSet, Workout } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkoutSession">;
-
-const REST_DURATION_SECONDS = 90;
 
 const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const { workoutId } = route.params;
@@ -37,6 +39,9 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [newExerciseName, setNewExerciseName] = useState("");
   const [newExerciseSets, setNewExerciseSets] = useState("3");
   const [newExerciseReps, setNewExerciseReps] = useState("10");
+  const [newExerciseRest, setNewExerciseRest] = useState(
+    String(DEFAULT_REST_SECONDS),
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -174,8 +179,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     const completed = !set.completed;
     updateSet(exerciseId, set.id, { completed });
     if (completed) {
+      const exercise = workout?.exercises.find((e) => e.id === exerciseId);
+      const restSeconds = exercise?.restSeconds ?? DEFAULT_REST_SECONDS;
       setNow(Date.now());
-      setRestEndAt(Date.now() + REST_DURATION_SECONDS * 1000);
+      setRestEndAt(Date.now() + restSeconds * 1000);
     }
   };
 
@@ -185,16 +192,24 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     if (!name) return;
     const targetSets = Math.max(1, Number(newExerciseSets) || 1);
     const targetReps = Math.max(1, Number(newExerciseReps) || 1);
+    const restSeconds = Math.max(0, Number(newExerciseRest) || 0);
     persist({
       ...workout,
       exercises: [
         ...workout.exercises,
-        createLoggedExercise(name, targetSets, targetReps, exerciseIdForName(name)),
+        createLoggedExercise(
+          name,
+          targetSets,
+          targetReps,
+          restSeconds,
+          exerciseIdForName(name),
+        ),
       ],
     });
     setNewExerciseName("");
     setNewExerciseSets("3");
     setNewExerciseReps("10");
+    setNewExerciseRest(String(DEFAULT_REST_SECONDS));
     setIsAddingExercise(false);
   };
 
@@ -276,7 +291,8 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
               </Pressable>
             </View>
             <Text style={styles.exerciseTarget}>
-              Target: {exercise.targetSets} x {exercise.targetReps}
+              Target: {exercise.targetSets} x {exercise.targetReps} ·{" "}
+              {exercise.restSeconds ?? DEFAULT_REST_SECONDS}s rest
             </Text>
 
             <View style={styles.setHeaderRow}>
@@ -369,6 +385,13 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     value={newExerciseReps}
                     onChangeText={setNewExerciseReps}
                     placeholder="Reps"
+                    keyboardType="number-pad"
+                  />
+                  <TextInput
+                    style={[styles.input, styles.addExerciseNumberInput]}
+                    value={newExerciseRest}
+                    onChangeText={setNewExerciseRest}
+                    placeholder="Rest s"
                     keyboardType="number-pad"
                   />
                 </View>

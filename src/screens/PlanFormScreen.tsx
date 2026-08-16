@@ -12,6 +12,7 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getPlans, savePlan } from '../storage/plans';
 import type { Exercise, Plan } from '../types';
 import { generateId } from '../utils/id';
+import { DEFAULT_REST_SECONDS } from '../utils/workout';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanForm'>;
 
@@ -26,7 +27,12 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
       const existing = plans.find((p) => p.id === planId);
       if (existing) {
         setName(existing.name);
-        setExercises(existing.exercises);
+        setExercises(
+          existing.exercises.map((e) => ({
+            ...e,
+            restSeconds: e.restSeconds ?? DEFAULT_REST_SECONDS,
+          })),
+        );
       }
     });
   }, [planId]);
@@ -34,7 +40,13 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
   const addExercise = () => {
     setExercises((prev) => [
       ...prev,
-      { id: generateId(), name: '', sets: 3, reps: 10 },
+      {
+        id: generateId(),
+        name: '',
+        sets: 3,
+        reps: 10,
+        restSeconds: DEFAULT_REST_SECONDS,
+      },
     ]);
   };
 
@@ -128,6 +140,15 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
               updateExercise(exercise.id, { reps: Number(text) || 0 })
             }
             placeholder="Reps"
+            keyboardType="number-pad"
+          />
+          <TextInput
+            style={[styles.input, styles.numberInput]}
+            value={String(exercise.restSeconds)}
+            onChangeText={(text) =>
+              updateExercise(exercise.id, { restSeconds: Number(text) || 0 })
+            }
+            placeholder="Rest s"
             keyboardType="number-pad"
           />
           <Pressable onPress={() => removeExercise(exercise.id)}>

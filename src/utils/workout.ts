@@ -1,6 +1,8 @@
 import { LoggedExercise, Plan, Workout } from "../types";
 import { generateId } from "./id";
 
+export const DEFAULT_REST_SECONDS = 90;
+
 export const exerciseIdForName = (name: string): string => {
   const slug = name
     .trim()
@@ -14,6 +16,7 @@ export const createLoggedExercise = (
   name: string,
   targetSets: number,
   targetReps: number,
+  restSeconds: number = DEFAULT_REST_SECONDS,
   exerciseId: string = generateId(),
 ): LoggedExercise => ({
   id: generateId(),
@@ -21,6 +24,7 @@ export const createLoggedExercise = (
   name,
   targetSets,
   targetReps,
+  restSeconds,
   sets: Array.from({ length: targetSets }, () => ({
     id: generateId(),
     targetReps,
@@ -42,6 +46,7 @@ export const createWorkoutFromPlan = (plan: Plan): Workout => {
         exercise.name,
         exercise.sets,
         exercise.reps,
+        exercise.restSeconds ?? DEFAULT_REST_SECONDS,
         exercise.id,
       ),
     ),

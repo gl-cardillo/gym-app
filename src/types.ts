@@ -3,6 +3,7 @@ export type Exercise = {
   name: string;
   sets: number;
   reps: number;
+  restSeconds: number;
 };
 
 export type Plan = {
@@ -25,6 +26,7 @@ export type LoggedExercise = {
   name: string;
   targetSets: number;
   targetReps: number;
+  restSeconds: number;
   sets: LoggedSet[];
 };
 
