@@ -12,12 +12,15 @@ export const exerciseIdForName = (name: string): string => {
   return slug ? `custom:${slug}` : generateId();
 };
 
+type SetPrefill = { weight: number | null; reps: number | null };
+
 export const createLoggedExercise = (
   name: string,
   targetSets: number,
   targetReps: number,
   restSeconds: number = DEFAULT_REST_SECONDS,
   exerciseId: string = generateId(),
+  prefillSets: SetPrefill[] = [],
 ): LoggedExercise => ({
   id: generateId(),
   exerciseId,
@@ -25,31 +28,47 @@ export const createLoggedExercise = (
   targetSets,
   targetReps,
   restSeconds,
-  sets: Array.from({ length: targetSets }, () => ({
+  sets: Array.from({ length: targetSets }, (_, index) => ({
     id: generateId(),
     targetReps,
-    weight: null,
-    reps: null,
+    weight: prefillSets[index]?.weight ?? null,
+    reps: prefillSets[index]?.reps ?? null,
     completed: false,
   })),
 });
 
-export const createWorkoutFromPlan = (plan: Plan): Workout => {
+export const createWorkoutFromPlan = (
+  plan: Plan,
+  previousWorkout?: Workout | null,
+): Workout => {
+  const previousExercisesById = new Map(
+    (previousWorkout?.exercises ?? []).map((exercise) => [
+      exercise.exerciseId,
+      exercise,
+    ]),
+  );
+
   return {
     id: generateId(),
     planId: plan.id,
     planName: plan.name,
     startedAt: new Date().toISOString(),
     completedAt: null,
-    exercises: plan.exercises.map((exercise) =>
-      createLoggedExercise(
+    exercises: plan.exercises.map((exercise) => {
+      const previous = previousExercisesById.get(exercise.id);
+      const prefillSets: SetPrefill[] = (previous?.sets ?? []).map((set) => ({
+        weight: set.weight,
+        reps: set.reps,
+      }));
+      return createLoggedExercise(
         exercise.name,
         exercise.sets,
         exercise.reps,
         exercise.restSeconds ?? DEFAULT_REST_SECONDS,
         exercise.id,
-      ),
-    ),
+        prefillSets,
+      );
+    }),
   };
 };
 

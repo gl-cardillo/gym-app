@@ -40,7 +40,8 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
 
   const handleStartWorkout = async () => {
     if (!plan) return;
-    const workout = createWorkoutFromPlan(plan);
+    const previousWorkout = workouts.find((w) => w.completedAt) ?? workouts[0] ?? null;
+    const workout = createWorkoutFromPlan(plan, previousWorkout);
     await saveWorkout(workout);
     navigation.navigate('WorkoutSession', { workoutId: workout.id });
   };
