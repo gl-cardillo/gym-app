@@ -119,6 +119,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   targetReps: exercise.targetReps,
                   weight: null,
                   reps: null,
+                  isWarmup: false,
                   completed: false,
                 },
               ],
@@ -297,6 +298,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
             <View style={styles.setHeaderRow}>
               <Text style={[styles.setHeaderCell, styles.setCol]}>Set</Text>
+              <Text style={[styles.setHeaderCell, styles.warmupCol]}>W</Text>
               <Text style={[styles.setHeaderCell, styles.weightCol]}>
                 Weight ({unit})
               </Text>
@@ -306,8 +308,34 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             </View>
 
             {exercise.sets.map((set, index) => (
-              <View key={set.id} style={styles.setRow}>
+              <View
+                key={set.id}
+                style={[styles.setRow, set.isWarmup && styles.setRowWarmup]}
+              >
                 <Text style={[styles.setCell, styles.setCol]}>{index + 1}</Text>
+                <Pressable
+                  style={styles.warmupCol}
+                  onPress={() =>
+                    updateSet(exercise.id, set.id, { isWarmup: !set.isWarmup })
+                  }
+                  hitSlop={6}
+                >
+                  <View
+                    style={[
+                      styles.warmupChip,
+                      set.isWarmup && styles.warmupChipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.warmupChipText,
+                        set.isWarmup && styles.warmupChipTextActive,
+                      ]}
+                    >
+                      W
+                    </Text>
+                  </View>
+                </Pressable>
                 <TextInput
                   style={[styles.input, styles.weightCol]}
                   value={set.weight === null ? "" : String(set.weight)}
@@ -500,8 +528,22 @@ const styles = StyleSheet.create({
   setHeaderRow: { flexDirection: "row", marginBottom: 6 },
   setHeaderCell: { fontSize: 12, color: "#666", fontWeight: "600" },
   setRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  setRowWarmup: { opacity: 0.7 },
   setCell: { fontSize: 14 },
   setCol: { width: 32 },
+  warmupCol: { width: 28, alignItems: "center" },
+  warmupChip: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: "#ccc",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  warmupChipActive: { backgroundColor: "#f5a623", borderColor: "#f5a623" },
+  warmupChipText: { fontSize: 11, fontWeight: "700", color: "#999" },
+  warmupChipTextActive: { color: "#fff" },
   weightCol: { flex: 1, marginRight: 8 },
   repsCol: { flex: 1, marginRight: 8 },
   doneCol: { width: 40, alignItems: "center" },

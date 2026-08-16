@@ -17,6 +17,7 @@ export type LoggedSet = {
   targetReps: number;
   weight: number | null;
   reps: number | null;
+  isWarmup: boolean;
   completed: boolean;
 };
 

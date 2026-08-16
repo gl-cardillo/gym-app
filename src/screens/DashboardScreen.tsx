@@ -50,7 +50,6 @@ const DashboardScreen = ({ navigation }: Props) => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Dashboard</Text>
         <Pressable style={styles.unitToggle} onPress={toggleUnit}>
           <Text style={styles.unitToggleText}>{unit}</Text>
         </Pressable>
@@ -149,7 +148,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     marginBottom: 16,
   },
   title: { fontSize: 24, fontWeight: "700" },

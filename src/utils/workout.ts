@@ -12,7 +12,11 @@ export const exerciseIdForName = (name: string): string => {
   return slug ? `custom:${slug}` : generateId();
 };
 
-type SetPrefill = { weight: number | null; reps: number | null };
+type SetPrefill = {
+  weight: number | null;
+  reps: number | null;
+  isWarmup: boolean;
+};
 
 export const createLoggedExercise = (
   name: string,
@@ -33,6 +37,7 @@ export const createLoggedExercise = (
     targetReps,
     weight: prefillSets[index]?.weight ?? null,
     reps: prefillSets[index]?.reps ?? null,
+    isWarmup: prefillSets[index]?.isWarmup ?? false,
     completed: false,
   })),
 });
@@ -59,6 +64,7 @@ export const createWorkoutFromPlan = (
       const prefillSets: SetPrefill[] = (previous?.sets ?? []).map((set) => ({
         weight: set.weight,
         reps: set.reps,
+        isWarmup: set.isWarmup,
       }));
       return createLoggedExercise(
         exercise.name,

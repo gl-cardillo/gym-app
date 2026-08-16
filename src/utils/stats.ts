@@ -31,7 +31,7 @@ const prsThisWeek = (completed: Workout[]): number => {
   )) {
     for (const exercise of workout.exercises) {
       const weights = exercise.sets
-        .filter((set) => set.completed && set.weight !== null)
+        .filter((set) => set.completed && set.weight !== null && !set.isWarmup)
         .map((set) => set.weight as number);
       if (weights.length === 0) continue;
       const sessionBest = Math.max(...weights);

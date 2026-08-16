@@ -36,7 +36,7 @@ export const getExerciseHistory = async (
     for (const exercise of workout.exercises) {
       if (exercise.exerciseId !== exerciseId) continue;
       const weights = exercise.sets
-        .filter((set) => set.completed && set.weight !== null)
+        .filter((set) => set.completed && set.weight !== null && !set.isWarmup)
         .map((set) => set.weight as number);
       if (weights.length === 0) continue;
       entries.push({
@@ -56,7 +56,7 @@ export const getWorkoutPRs = async (workout: Workout): Promise<string[]> => {
 
   for (const exercise of workout.exercises) {
     const weights = exercise.sets
-      .filter((set) => set.completed && set.weight !== null)
+      .filter((set) => set.completed && set.weight !== null && !set.isWarmup)
       .map((set) => set.weight as number);
     if (weights.length === 0) continue;
     const sessionBest = Math.max(...weights);
