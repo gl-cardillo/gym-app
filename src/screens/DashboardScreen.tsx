@@ -128,6 +128,13 @@ const DashboardScreen = ({ navigation }: Props) => {
       >
         <Text style={styles.bodyweightButtonText}>Bodyweight Log</Text>
       </Pressable>
+
+      <Pressable
+        style={styles.bodyweightButton}
+        onPress={() => navigation.navigate("History")}
+      >
+        <Text style={styles.bodyweightButtonText}>Workout History</Text>
+      </Pressable>
     </ScrollView>
   );
 };

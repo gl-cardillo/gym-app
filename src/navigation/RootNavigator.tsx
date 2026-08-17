@@ -7,6 +7,7 @@ import PlanDetailScreen from '../screens/PlanDetailScreen';
 import WorkoutSessionScreen from '../screens/WorkoutSessionScreen';
 import ExerciseProgressScreen from '../screens/ExerciseProgressScreen';
 import BodyweightScreen from '../screens/BodyweightScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 
 export type RootStackParamList = {
   Dashboard: undefined;
@@ -16,6 +17,7 @@ export type RootStackParamList = {
   WorkoutSession: { workoutId: string };
   ExerciseProgress: { exerciseId: string; exerciseName: string };
   Bodyweight: undefined;
+  History: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -58,6 +60,11 @@ const RootNavigator = () => {
           name="Bodyweight"
           component={BodyweightScreen}
           options={{ title: 'Bodyweight' }}
+        />
+        <Stack.Screen
+          name="History"
+          component={HistoryScreen}
+          options={{ title: 'History' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

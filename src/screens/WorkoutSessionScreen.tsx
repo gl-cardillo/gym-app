@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import * as Notifications from "expo-notifications";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -42,6 +43,8 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [newExerciseRest, setNewExerciseRest] = useState(
     String(DEFAULT_REST_SECONDS),
   );
+  const restNotificationIdRef = useRef<string | null>(null);
+  const restExerciseNameRef = useRef<string>("");
 
   useFocusEffect(
     useCallback(() => {
@@ -51,6 +54,35 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
       getWeightUnit().then(setUnit);
     }, [workoutId]),
   );
+
+  useEffect(() => {
+    Notifications.requestPermissionsAsync();
+  }, []);
+
+  const cancelRestNotification = async () => {
+    if (restNotificationIdRef.current) {
+      await Notifications.cancelScheduledNotificationAsync(
+        restNotificationIdRef.current,
+      );
+      restNotificationIdRef.current = null;
+    }
+  };
+
+  const scheduleRestNotification = async (endAt: number) => {
+    await cancelRestNotification();
+    restNotificationIdRef.current = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Rest complete",
+        body: restExerciseNameRef.current
+          ? `${restExerciseNameRef.current} time for your next set.`
+          : "Time for your next set.",
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: endAt,
+      },
+    });
+  };
 
   useEffect(() => {
     if (restEndAt === null) return;
@@ -65,6 +97,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     if (restSecondsLeft === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRestEndAt(null);
+      restNotificationIdRef.current = null;
     }
   }, [restSecondsLeft]);
 
@@ -72,11 +105,16 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     setRestEndAt((prev) => {
       if (prev === null) return prev;
       const next = prev + deltaSeconds * 1000;
-      return next <= Date.now() ? Date.now() : next;
+      const clamped = next <= Date.now() ? Date.now() : next;
+      scheduleRestNotification(clamped);
+      return clamped;
     });
   };
 
-  const skipRest = () => setRestEndAt(null);
+  const skipRest = () => {
+    setRestEndAt(null);
+    cancelRestNotification();
+  };
 
   const persist = async (next: Workout) => {
     setWorkout(next);
@@ -182,8 +220,11 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     if (completed) {
       const exercise = workout?.exercises.find((e) => e.id === exerciseId);
       const restSeconds = exercise?.restSeconds ?? DEFAULT_REST_SECONDS;
+      const endAt = Date.now() + restSeconds * 1000;
+      restExerciseNameRef.current = exercise?.name ?? "";
       setNow(Date.now());
-      setRestEndAt(Date.now() + restSeconds * 1000);
+      setRestEndAt(endAt);
+      scheduleRestNotification(endAt);
     }
   };
 
@@ -216,13 +257,14 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
   const handleFinish = async () => {
     if (!workout) return;
+    await cancelRestNotification();
     const prNames = await getWorkoutPRs(workout);
     await persist({ ...workout, completedAt: new Date().toISOString() });
     if (prNames.length > 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
         "New PR!",
-        `${prNames.join(", ")} — new top weight this session.`,
+        `${prNames.join(", ")}.`,
         [{ text: "Nice", onPress: () => navigation.goBack() }],
       );
     } else {
@@ -237,6 +279,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
+          await cancelRestNotification();
           await deleteWorkout(workoutId);
           navigation.goBack();
         },
