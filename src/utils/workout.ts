@@ -86,3 +86,23 @@ export const createEmptyWorkout = (): Workout => ({
   completedAt: null,
   exercises: [],
 });
+
+export const estimateOneRepMax = (weight: number, reps: number): number => {
+  if (weight <= 0 || reps <= 0) return 0;
+  if (reps === 1) return weight;
+  return Math.round(weight * (1 + reps / 30) * 10) / 10;
+};
+
+export const computeWorkoutVolume = (workout: Workout): number => {
+  return workout.exercises.reduce(
+    (total, exercise) =>
+      total +
+      exercise.sets.reduce((sum, set) => {
+        if (!set.completed || set.isWarmup || set.weight === null || set.reps === null) {
+          return sum;
+        }
+        return sum + set.weight * set.reps;
+      }, 0),
+    0,
+  );
+};

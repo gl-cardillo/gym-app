@@ -21,6 +21,7 @@ import {
 } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import {
+  computeWorkoutVolume,
   createLoggedExercise,
   DEFAULT_REST_SECONDS,
   exerciseIdForName,
@@ -296,6 +297,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   }
 
   const isCompleted = !!workout.completedAt;
+  const volume = computeWorkoutVolume(workout);
 
   return (
     <View style={styles.container}>
@@ -312,6 +314,11 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             ? ` · finished ${formatDateTime(workout.completedAt as string)}`
             : " · in progress"}
         </Text>
+        {volume > 0 && (
+          <Text style={styles.volumeText}>
+            {volume.toLocaleString()} {unit} total volume
+          </Text>
+        )}
 
         {workout.exercises.map((exercise) => (
           <View key={exercise.id} style={styles.exerciseBlock}>
@@ -544,7 +551,8 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 32 },
   contentWithRestBar: { paddingBottom: 112 },
   title: { fontSize: 24, fontWeight: "700" },
-  subtitle: { color: "#666", marginTop: 4, marginBottom: 16 },
+  subtitle: { color: "#666", marginTop: 4, marginBottom: 8 },
+  volumeText: { color: "#666", marginBottom: 16, fontSize: 13 },
   exerciseBlock: {
     marginBottom: 20,
     padding: 12,

@@ -4,12 +4,15 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { getWorkouts } from "../storage/workouts";
+import { getWeightUnit, WeightUnit } from "../storage/settings";
+import { computeWorkoutVolume } from "../utils/workout";
 import type { Workout } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
 
 const HistoryScreen = ({ navigation }: Props) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [unit, setUnit] = useState<WeightUnit>("lbs");
 
   useFocusEffect(
     useCallback(() => {
@@ -18,6 +21,7 @@ const HistoryScreen = ({ navigation }: Props) => {
           [...all].sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
         ),
       );
+      getWeightUnit().then(setUnit);
     }, []),
   );
 
@@ -26,30 +30,34 @@ const HistoryScreen = ({ navigation }: Props) => {
       {workouts.length === 0 ? (
         <Text style={styles.emptyText}>No workouts logged yet.</Text>
       ) : (
-        workouts.map((workout) => (
-          <Pressable
-            key={workout.id}
-            style={styles.workoutRow}
-            onPress={() =>
-              navigation.navigate("WorkoutSession", { workoutId: workout.id })
-            }
-          >
-            <View style={styles.workoutRowHeader}>
-              <Text style={styles.workoutPlan}>{workout.planName}</Text>
-              {!workout.completedAt && (
-                <View style={styles.inProgressChip}>
-                  <Text style={styles.inProgressChipText}>In progress</Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.workoutDate}>
-              {formatDate(workout.startedAt)}
-            </Text>
-            <Text style={styles.workoutMeta}>
-              {countLoggedSets(workout)}/{countTotalSets(workout)} sets logged
-            </Text>
-          </Pressable>
-        ))
+        workouts.map((workout) => {
+          const volume = computeWorkoutVolume(workout);
+          return (
+            <Pressable
+              key={workout.id}
+              style={styles.workoutRow}
+              onPress={() =>
+                navigation.navigate("WorkoutSession", { workoutId: workout.id })
+              }
+            >
+              <View style={styles.workoutRowHeader}>
+                <Text style={styles.workoutPlan}>{workout.planName}</Text>
+                {!workout.completedAt && (
+                  <View style={styles.inProgressChip}>
+                    <Text style={styles.inProgressChipText}>In progress</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.workoutDate}>
+                {formatDate(workout.startedAt)}
+              </Text>
+              <Text style={styles.workoutMeta}>
+                {countLoggedSets(workout)}/{countTotalSets(workout)} sets logged
+                {volume > 0 ? ` · ${volume.toLocaleString()} ${unit} volume` : ""}
+              </Text>
+            </Pressable>
+          );
+        })
       )}
     </ScrollView>
   );

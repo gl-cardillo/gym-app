@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Workout } from "../types";
 import { WeightUnit } from "./settings";
 import { convertWeight } from "../utils/units";
+import { estimateOneRepMax } from "../utils/workout";
 
 const STORAGE_KEY = "gym-app:workouts";
 
@@ -10,6 +11,8 @@ export type ExerciseHistoryEntry = {
   planName: string;
   date: string;
   topWeight: number;
+  volume: number;
+  estimatedOneRepMax: number;
 };
 
 export const getWorkouts = async (): Promise<Workout[]> => {
@@ -35,15 +38,31 @@ export const getExerciseHistory = async (
   for (const workout of workouts) {
     for (const exercise of workout.exercises) {
       if (exercise.exerciseId !== exerciseId) continue;
-      const weights = exercise.sets
-        .filter((set) => set.completed && set.weight !== null && !set.isWarmup)
-        .map((set) => set.weight as number);
-      if (weights.length === 0) continue;
+      const workingSets = exercise.sets.filter(
+        (set) => set.completed && set.weight !== null && !set.isWarmup,
+      );
+      if (workingSets.length === 0) continue;
+
+      const topWeight = Math.max(
+        ...workingSets.map((set) => set.weight as number),
+      );
+      const volume = workingSets.reduce(
+        (sum, set) => sum + (set.weight as number) * (set.reps ?? 0),
+        0,
+      );
+      const estimatedOneRepMax = workingSets.reduce(
+        (max, set) =>
+          Math.max(max, estimateOneRepMax(set.weight as number, set.reps ?? 0)),
+        0,
+      );
+
       entries.push({
         workoutId: workout.id,
         planName: workout.planName,
         date: workout.startedAt,
-        topWeight: Math.max(...weights),
+        topWeight,
+        volume,
+        estimatedOneRepMax,
       });
     }
   }
