@@ -18,10 +18,11 @@ import {
 } from "../storage/bodyweight";
 import type { BodyweightEntry } from "../storage/bodyweight";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
+import LineChart from "../components/LineChart";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Bodyweight">;
 
-const CHART_HEIGHT = 140;
+const CHART_HEIGHT = 180;
 
 const BodyweightScreen = (_props: Props) => {
   const [entries, setEntries] = useState<BodyweightEntry[]>([]);
@@ -38,17 +39,6 @@ const BodyweightScreen = (_props: Props) => {
       load();
     }, [load]),
   );
-
-  const minWeight = entries.reduce(
-    (min, entry) => Math.min(min, entry.weight),
-    entries.length > 0 ? entries[0].weight : 0,
-  );
-  const maxWeight = entries.reduce(
-    (max, entry) => Math.max(max, entry.weight),
-    0,
-  );
-  const chartFloor = entries.length > 0 ? Math.min(minWeight, maxWeight) : 0;
-  const chartRange = Math.max(maxWeight - chartFloor, 1);
 
   const handleLog = async () => {
     const weight = Number(newWeight);
@@ -96,25 +86,17 @@ const BodyweightScreen = (_props: Props) => {
       ) : (
         <>
           <Text style={styles.sectionTitle}>Weight over time</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.chart}>
-              {entries.map((entry) => {
-                const barHeight = Math.max(
-                  ((entry.weight - chartFloor) / chartRange) * CHART_HEIGHT,
-                  4,
-                );
-                return (
-                  <View key={entry.id} style={styles.barColumn}>
-                    <Text style={styles.barValue}>{entry.weight}</Text>
-                    <View style={[styles.bar, { height: barHeight }]} />
-                    <Text style={styles.barLabel}>
-                      {formatShortDate(entry.date)}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          </ScrollView>
+          <LineChart
+            height={CHART_HEIGHT}
+            unit={unit}
+            color="#1a9c53"
+            points={entries.map((entry) => ({
+              x: new Date(entry.date).getTime(),
+              y: entry.weight,
+              label: formatShortDate(entry.date),
+              fullLabel: formatDate(entry.date),
+            }))}
+          />
 
           <Text style={styles.sectionTitle}>History</Text>
           {[...entries].reverse().map((entry) => (
@@ -181,18 +163,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 12,
   },
-  chart: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    minHeight: CHART_HEIGHT + 40,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    paddingBottom: 8,
-  },
-  barColumn: { alignItems: "center", marginRight: 12, width: 40 },
-  barValue: { fontSize: 11, color: "#666", marginBottom: 4 },
-  bar: { width: 20, backgroundColor: "#1a9c53", borderRadius: 4 },
-  barLabel: { fontSize: 11, color: "#666", marginTop: 6 },
   historyRow: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -6,10 +6,11 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { getExerciseHistory } from "../storage/workouts";
 import type { ExerciseHistoryEntry } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
+import LineChart from "../components/LineChart";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ExerciseProgress">;
 
-const CHART_HEIGHT = 140;
+const CHART_HEIGHT = 180;
 
 type Metric = "topWeight" | "estimatedOneRepMax";
 
@@ -69,36 +70,17 @@ const ExerciseProgressScreen = ({ route }: Props) => {
           <Text style={styles.sectionTitle}>
             {METRIC_LABELS[metric]} per session
           </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.chart}>
-              {history.map((entry) => {
-                const value = entry[metric];
-                const barHeight =
-                  maxValue > 0
-                    ? Math.max((value / maxValue) * CHART_HEIGHT, 4)
-                    : 4;
-                const isPR = maxValue > 0 && value === maxValue;
-                return (
-                  <View key={entry.workoutId} style={styles.barColumn}>
-                    <Text style={styles.barValue}>
-                      {isPR ? "★ " : ""}
-                      {value}
-                    </Text>
-                    <View
-                      style={[
-                        styles.bar,
-                        { height: barHeight },
-                        isPR && styles.barPR,
-                      ]}
-                    />
-                    <Text style={styles.barLabel}>
-                      {formatShortDate(entry.date)}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          </ScrollView>
+          <LineChart
+            height={CHART_HEIGHT}
+            unit={unit}
+            points={history.map((entry) => ({
+              x: new Date(entry.date).getTime(),
+              y: entry[metric],
+              label: formatShortDate(entry.date),
+              fullLabel: `${formatDate(entry.date)} · ${entry.planName}`,
+              isHighlight: maxValue > 0 && entry[metric] === maxValue,
+            }))}
+          />
 
           <Text style={styles.sectionTitle}>History</Text>
           {[...history].reverse().map((entry) => {
@@ -170,19 +152,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 12,
   },
-  chart: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    minHeight: CHART_HEIGHT + 40,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    paddingBottom: 8,
-  },
-  barColumn: { alignItems: "center", marginRight: 12, width: 40 },
-  barValue: { fontSize: 11, color: "#666", marginBottom: 4 },
-  bar: { width: 20, backgroundColor: "#2f6feb", borderRadius: 4 },
-  barPR: { backgroundColor: "#e8a400" },
-  barLabel: { fontSize: 11, color: "#666", marginTop: 6 },
   historyRow: {
     flexDirection: "row",
     justifyContent: "space-between",
