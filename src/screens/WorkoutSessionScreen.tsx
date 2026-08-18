@@ -28,6 +28,13 @@ import {
 } from "../utils/workout";
 import { generateId } from "../utils/id";
 import type { LoggedSet, Workout } from "../types";
+import ExerciseNameField from "../components/ExerciseNameField";
+import {
+  getExerciseLibrary,
+  upsertLibraryExercise,
+  LibraryExercise,
+  MuscleGroup,
+} from "../storage/exerciseLibrary";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkoutSession">;
 
@@ -44,6 +51,9 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [newExerciseRest, setNewExerciseRest] = useState(
     String(DEFAULT_REST_SECONDS),
   );
+  const [newExerciseMuscleGroup, setNewExerciseMuscleGroup] =
+    useState<MuscleGroup | null>(null);
+  const [library, setLibrary] = useState<LibraryExercise[]>([]);
   const restNotificationIdRef = useRef<string | null>(null);
   const restExerciseNameRef = useRef<string>("");
 
@@ -53,6 +63,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         setWorkout(workouts.find((w) => w.id === workoutId) ?? null);
       });
       getWeightUnit().then(setUnit);
+      getExerciseLibrary().then(setLibrary);
     }, [workoutId]),
   );
 
@@ -249,10 +260,14 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         ),
       ],
     });
+    upsertLibraryExercise(name, newExerciseMuscleGroup).then((entry) => {
+      if (entry) setLibrary((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
+    });
     setNewExerciseName("");
     setNewExerciseSets("3");
     setNewExerciseReps("10");
     setNewExerciseRest(String(DEFAULT_REST_SECONDS));
+    setNewExerciseMuscleGroup(null);
     setIsAddingExercise(false);
   };
 
@@ -439,62 +454,62 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
           </View>
         ))}
 
-        {!isCompleted && (
-          <View style={styles.addExerciseBlock}>
-            {isAddingExercise ? (
-              <>
+        <View style={styles.addExerciseBlock}>
+          {isAddingExercise ? (
+            <>
+              <ExerciseNameField
+                value={newExerciseName}
+                onChangeText={setNewExerciseName}
+                library={library}
+                muscleGroup={newExerciseMuscleGroup}
+                onChangeMuscleGroup={setNewExerciseMuscleGroup}
+                inputStyle={styles.addExerciseNameInput}
+                autoFocus
+              />
+              <View style={styles.addExerciseRow}>
                 <TextInput
-                  style={styles.addExerciseNameInput}
-                  value={newExerciseName}
-                  onChangeText={setNewExerciseName}
-                  placeholder="Exercise name"
-                  autoFocus
+                  style={[styles.input, styles.addExerciseNumberInput]}
+                  value={newExerciseSets}
+                  onChangeText={setNewExerciseSets}
+                  placeholder="Sets"
+                  keyboardType="number-pad"
                 />
-                <View style={styles.addExerciseRow}>
-                  <TextInput
-                    style={[styles.input, styles.addExerciseNumberInput]}
-                    value={newExerciseSets}
-                    onChangeText={setNewExerciseSets}
-                    placeholder="Sets"
-                    keyboardType="number-pad"
-                  />
-                  <TextInput
-                    style={[styles.input, styles.addExerciseNumberInput]}
-                    value={newExerciseReps}
-                    onChangeText={setNewExerciseReps}
-                    placeholder="Reps"
-                    keyboardType="number-pad"
-                  />
-                  <TextInput
-                    style={[styles.input, styles.addExerciseNumberInput]}
-                    value={newExerciseRest}
-                    onChangeText={setNewExerciseRest}
-                    placeholder="Rest s"
-                    keyboardType="number-pad"
-                  />
-                </View>
-                <View style={styles.addExerciseActions}>
-                  <Pressable
-                    style={styles.addExerciseConfirmButton}
-                    onPress={handleAddExercise}
-                  >
-                    <Text style={styles.addExerciseConfirmText}>Add</Text>
-                  </Pressable>
-                  <Pressable
-                    style={styles.addExerciseCancelButton}
-                    onPress={() => setIsAddingExercise(false)}
-                  >
-                    <Text style={styles.addExerciseCancelText}>Cancel</Text>
-                  </Pressable>
-                </View>
-              </>
-            ) : (
-              <Pressable onPress={() => setIsAddingExercise(true)}>
-                <Text style={styles.addExerciseButtonText}>+ Add Exercise</Text>
-              </Pressable>
-            )}
-          </View>
-        )}
+                <TextInput
+                  style={[styles.input, styles.addExerciseNumberInput]}
+                  value={newExerciseReps}
+                  onChangeText={setNewExerciseReps}
+                  placeholder="Reps"
+                  keyboardType="number-pad"
+                />
+                <TextInput
+                  style={[styles.input, styles.addExerciseNumberInput]}
+                  value={newExerciseRest}
+                  onChangeText={setNewExerciseRest}
+                  placeholder="Rest s"
+                  keyboardType="number-pad"
+                />
+              </View>
+              <View style={styles.addExerciseActions}>
+                <Pressable
+                  style={styles.addExerciseConfirmButton}
+                  onPress={handleAddExercise}
+                >
+                  <Text style={styles.addExerciseConfirmText}>Add</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.addExerciseCancelButton}
+                  onPress={() => setIsAddingExercise(false)}
+                >
+                  <Text style={styles.addExerciseCancelText}>Cancel</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <Pressable onPress={() => setIsAddingExercise(true)}>
+              <Text style={styles.addExerciseButtonText}>+ Add Exercise</Text>
+            </Pressable>
+          )}
+        </View>
 
         <View style={styles.actions}>
           {!isCompleted && (

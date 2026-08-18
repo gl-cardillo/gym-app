@@ -12,7 +12,14 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 import { getPlans, savePlan } from '../storage/plans';
 import type { Exercise, Plan } from '../types';
 import { generateId } from '../utils/id';
-import { DEFAULT_REST_SECONDS } from '../utils/workout';
+import { DEFAULT_REST_SECONDS, exerciseIdForName } from '../utils/workout';
+import ExerciseNameField from '../components/ExerciseNameField';
+import {
+  getExerciseLibrary,
+  upsertLibraryExercise,
+  LibraryExercise,
+  MuscleGroup,
+} from '../storage/exerciseLibrary';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanForm'>;
 
@@ -20,6 +27,14 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
   const { planId } = route.params;
   const [name, setName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [library, setLibrary] = useState<LibraryExercise[]>([]);
+  const [muscleGroups, setMuscleGroups] = useState<
+    Record<string, MuscleGroup | null>
+  >({});
+
+  useEffect(() => {
+    getExerciseLibrary().then(setLibrary);
+  }, []);
 
   useEffect(() => {
     if (!planId) return;
@@ -74,9 +89,16 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
     const plan: Plan = {
       id: planId ?? generateId(),
       name: name.trim() || 'Untitled Plan',
-      exercises,
+      exercises: exercises.map((e) =>
+        e.name.trim() ? { ...e, id: exerciseIdForName(e.name) } : e,
+      ),
     };
     await savePlan(plan);
+    await Promise.all(
+      exercises
+        .filter((e) => e.name.trim())
+        .map((e) => upsertLibraryExercise(e.name, muscleGroups[e.id] ?? null)),
+    );
     navigation.goBack();
   };
 
@@ -92,68 +114,77 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
 
       <Text style={styles.label}>Exercises</Text>
       {exercises.map((exercise, index) => (
-        <View key={exercise.id} style={styles.exerciseRow}>
-          <View style={styles.reorderColumn}>
-            <Pressable
-              onPress={() => moveExercise(index, -1)}
-              disabled={index === 0}
-              hitSlop={6}
-            >
-              <Text style={[styles.reorderText, index === 0 && styles.reorderTextDisabled]}>
-                ▲
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => moveExercise(index, 1)}
-              disabled={index === exercises.length - 1}
-              hitSlop={6}
-            >
-              <Text
-                style={[
-                  styles.reorderText,
-                  index === exercises.length - 1 && styles.reorderTextDisabled,
-                ]}
+        <View key={exercise.id} style={styles.exerciseCard}>
+          <View style={styles.exerciseCardHeader}>
+            <View style={styles.reorderColumn}>
+              <Pressable
+                onPress={() => moveExercise(index, -1)}
+                disabled={index === 0}
+                hitSlop={6}
               >
-                ▼
-              </Text>
+                <Text style={[styles.reorderText, index === 0 && styles.reorderTextDisabled]}>
+                  ▲
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => moveExercise(index, 1)}
+                disabled={index === exercises.length - 1}
+                hitSlop={6}
+              >
+                <Text
+                  style={[
+                    styles.reorderText,
+                    index === exercises.length - 1 && styles.reorderTextDisabled,
+                  ]}
+                >
+                  ▼
+                </Text>
+              </Pressable>
+            </View>
+            <View style={styles.exerciseNameWrap}>
+              <ExerciseNameField
+                value={exercise.name}
+                onChangeText={(text) => updateExercise(exercise.id, { name: text })}
+                library={library}
+                muscleGroup={muscleGroups[exercise.id] ?? null}
+                onChangeMuscleGroup={(group) =>
+                  setMuscleGroups((prev) => ({ ...prev, [exercise.id]: group }))
+                }
+              />
+            </View>
+            <Pressable onPress={() => removeExercise(exercise.id)} hitSlop={6}>
+              <Text style={styles.removeText}>✕</Text>
             </Pressable>
           </View>
-          <TextInput
-            style={[styles.input, styles.exerciseName]}
-            value={exercise.name}
-            onChangeText={(text) => updateExercise(exercise.id, { name: text })}
-            placeholder="Exercise name"
-          />
-          <TextInput
-            style={[styles.input, styles.numberInput]}
-            value={String(exercise.sets)}
-            onChangeText={(text) =>
-              updateExercise(exercise.id, { sets: Number(text) || 0 })
-            }
-            placeholder="Sets"
-            keyboardType="number-pad"
-          />
-          <TextInput
-            style={[styles.input, styles.numberInput]}
-            value={String(exercise.reps)}
-            onChangeText={(text) =>
-              updateExercise(exercise.id, { reps: Number(text) || 0 })
-            }
-            placeholder="Reps"
-            keyboardType="number-pad"
-          />
-          <TextInput
-            style={[styles.input, styles.numberInput]}
-            value={String(exercise.restSeconds)}
-            onChangeText={(text) =>
-              updateExercise(exercise.id, { restSeconds: Number(text) || 0 })
-            }
-            placeholder="Rest s"
-            keyboardType="number-pad"
-          />
-          <Pressable onPress={() => removeExercise(exercise.id)}>
-            <Text style={styles.removeText}>✕</Text>
-          </Pressable>
+          <View style={styles.exerciseNumbersRow}>
+            <TextInput
+              style={[styles.input, styles.numberInput]}
+              value={String(exercise.sets)}
+              onChangeText={(text) =>
+                updateExercise(exercise.id, { sets: Number(text) || 0 })
+              }
+              placeholder="Sets"
+              keyboardType="number-pad"
+            />
+            <TextInput
+              style={[styles.input, styles.numberInput]}
+              value={String(exercise.reps)}
+              onChangeText={(text) =>
+                updateExercise(exercise.id, { reps: Number(text) || 0 })
+              }
+              placeholder="Reps"
+              keyboardType="number-pad"
+            />
+            <TextInput
+              style={[styles.input, styles.numberInput]}
+              value={String(exercise.restSeconds)}
+              onChangeText={(text) =>
+                updateExercise(exercise.id, { restSeconds: Number(text) || 0 })
+              }
+              placeholder="Rest s"
+              keyboardType="number-pad"
+            />
+          </View>
         </View>
       ))}
 
@@ -181,7 +212,13 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
-  exerciseRow: {
+  exerciseCard: {
+    backgroundColor: '#f7f7f7',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  exerciseCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -190,7 +227,8 @@ const styles = StyleSheet.create({
   reorderColumn: { alignItems: 'center', justifyContent: 'center' },
   reorderText: { fontSize: 14, color: '#2f6feb', paddingVertical: 2 },
   reorderTextDisabled: { color: '#ccc' },
-  exerciseName: { flex: 2 },
+  exerciseNameWrap: { flex: 1 },
+  exerciseNumbersRow: { flexDirection: 'row', gap: 8 },
   numberInput: { flex: 1, textAlign: 'center' },
   removeText: { fontSize: 18, color: '#c00', paddingHorizontal: 4 },
   addExerciseButton: { paddingVertical: 12, alignItems: 'center' },
