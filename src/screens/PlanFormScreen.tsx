@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -20,10 +20,14 @@ import {
   LibraryExercise,
   MuscleGroup,
 } from '../storage/exerciseLibrary';
+import { useTheme } from '../theme/ThemeContext';
+import type { ColorTokens } from '../theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanForm'>;
 
 const PlanFormScreen = ({ route, navigation }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { planId } = route.params;
   const [name, setName] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -110,6 +114,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
         value={name}
         onChangeText={setName}
         placeholder="e.g. Push Day"
+        placeholderTextColor={colors.textFaint}
       />
 
       <Text style={styles.label}>Exercises</Text>
@@ -164,6 +169,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                 updateExercise(exercise.id, { sets: Number(text) || 0 })
               }
               placeholder="Sets"
+              placeholderTextColor={colors.textFaint}
               keyboardType="number-pad"
             />
             <TextInput
@@ -173,6 +179,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                 updateExercise(exercise.id, { reps: Number(text) || 0 })
               }
               placeholder="Reps"
+              placeholderTextColor={colors.textFaint}
               keyboardType="number-pad"
             />
             <TextInput
@@ -182,6 +189,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                 updateExercise(exercise.id, { restSeconds: Number(text) || 0 })
               }
               placeholder="Rest s"
+              placeholderTextColor={colors.textFaint}
               keyboardType="number-pad"
             />
           </View>
@@ -201,45 +209,48 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
 
 export default PlanFormScreen;
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16 },
-  label: { fontSize: 14, color: '#666', marginTop: 16, marginBottom: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  exerciseCard: {
-    backgroundColor: '#f7f7f7',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-  },
-  exerciseCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  reorderColumn: { alignItems: 'center', justifyContent: 'center' },
-  reorderText: { fontSize: 14, color: '#2f6feb', paddingVertical: 2 },
-  reorderTextDisabled: { color: '#ccc' },
-  exerciseNameWrap: { flex: 1 },
-  exerciseNumbersRow: { flexDirection: 'row', gap: 8 },
-  numberInput: { flex: 1, textAlign: 'center' },
-  removeText: { fontSize: 18, color: '#c00', paddingHorizontal: 4 },
-  addExerciseButton: { paddingVertical: 12, alignItems: 'center' },
-  addExerciseText: { color: '#2f6feb', fontSize: 16 },
-  saveButton: {
-    backgroundColor: '#2f6feb',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 32,
-  },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 16 },
+    label: { fontSize: 14, color: colors.textMuted, marginTop: 16, marginBottom: 8 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.inputBackground,
+    },
+    exerciseCard: {
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 8,
+      padding: 10,
+      marginBottom: 10,
+    },
+    exerciseCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 8,
+    },
+    reorderColumn: { alignItems: 'center', justifyContent: 'center' },
+    reorderText: { fontSize: 14, color: colors.primary, paddingVertical: 2 },
+    reorderTextDisabled: { color: colors.borderMuted },
+    exerciseNameWrap: { flex: 1 },
+    exerciseNumbersRow: { flexDirection: 'row', gap: 8 },
+    numberInput: { flex: 1, textAlign: 'center' },
+    removeText: { fontSize: 18, color: colors.danger, paddingHorizontal: 4 },
+    addExerciseButton: { paddingVertical: 12, alignItems: 'center' },
+    addExerciseText: { color: colors.primary, fontSize: 16 },
+    saveButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: 'center',
+      marginTop: 16,
+      marginBottom: 32,
+    },
+    saveButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '600' },
+  });

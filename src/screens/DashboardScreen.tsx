@@ -1,13 +1,13 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { convertStoredWeights, getWorkouts, saveWorkout } from "../storage/workouts";
-import { convertStoredBodyweights } from "../storage/bodyweight";
-import { getWeightUnit, setWeightUnit, WeightUnit } from "../storage/settings";
+import { getWorkouts, saveWorkout } from "../storage/workouts";
 import { computeDashboardStats, DashboardStats } from "../utils/stats";
 import { createEmptyWorkout } from "../utils/workout";
+import { useTheme } from "../theme/ThemeContext";
+import type { ColorTokens } from "../theme/colors";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Dashboard">;
 
@@ -21,25 +21,17 @@ const EMPTY_STATS: DashboardStats = {
 };
 
 const DashboardScreen = ({ navigation }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
-  const [unit, setUnit] = useState<WeightUnit>("lbs");
 
   useFocusEffect(
     useCallback(() => {
       getWorkouts().then((workouts) =>
         setStats(computeDashboardStats(workouts)),
       );
-      getWeightUnit().then(setUnit);
     }, []),
   );
-
-  const toggleUnit = async () => {
-    const next = unit === "lbs" ? "kg" : "lbs";
-    await convertStoredWeights(unit, next);
-    await convertStoredBodyweights(unit, next);
-    setUnit(next);
-    await setWeightUnit(next);
-  };
 
   const handleQuickWorkout = async () => {
     const workout = createEmptyWorkout();
@@ -50,8 +42,12 @@ const DashboardScreen = ({ navigation }: Props) => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
-        <Pressable style={styles.unitToggle} onPress={toggleUnit}>
-          <Text style={styles.unitToggleText}>{unit}</Text>
+        <Pressable
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate("Settings")}
+          hitSlop={8}
+        >
+          <Text style={styles.settingsButtonText}>Settings</Text>
         </Pressable>
       </View>
 
@@ -149,77 +145,84 @@ const formatDate = (iso: string): string => {
   });
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginBottom: 16,
-  },
-  title: { fontSize: 24, fontWeight: "700" },
-  unitToggle: {
-    backgroundColor: "#f2f2f2",
-    borderRadius: 16,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-  },
-  unitToggleText: { fontSize: 13, fontWeight: "700", color: "#2f6feb" },
-  statsRow: { flexDirection: "row", gap: 12 },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-  },
-  statValue: { fontSize: 22, fontWeight: "700" },
-  statLabel: { color: "#666", fontSize: 12, marginTop: 4, textAlign: "center" },
-  continueCard: {
-    backgroundColor: "#1a9c53",
-    borderRadius: 8,
-    padding: 16,
-    marginTop: 16,
-  },
-  continueTitle: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  continueMeta: { color: "#e6f6ec", marginTop: 2 },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  emptyText: { color: "#666" },
-  lastWorkoutCard: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#f2f2f2",
-  },
-  lastWorkoutPlan: { fontSize: 16, fontWeight: "600" },
-  lastWorkoutDate: { color: "#666", marginTop: 2 },
-  quickWorkoutButton: {
-    backgroundColor: "#1a9c53",
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 28,
-  },
-  quickWorkoutButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  plansButton: {
-    backgroundColor: "#2f6feb",
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  plansButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  bodyweightButton: {
-    backgroundColor: "#f2f2f2",
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  bodyweightButtonText: { color: "#333", fontSize: 16, fontWeight: "600" },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 32 },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      marginBottom: 16,
+    },
+    title: { fontSize: 24, fontWeight: "700", color: colors.text },
+    settingsButton: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+    },
+    settingsButtonText: { fontSize: 13, fontWeight: "700", color: colors.primary },
+    statsRow: { flexDirection: "row", gap: 12 },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      padding: 14,
+      alignItems: "center",
+    },
+    statValue: { fontSize: 22, fontWeight: "700", color: colors.text },
+    statLabel: {
+      color: colors.textMuted,
+      fontSize: 12,
+      marginTop: 4,
+      textAlign: "center",
+    },
+    continueCard: {
+      backgroundColor: colors.success,
+      borderRadius: 8,
+      padding: 16,
+      marginTop: 16,
+    },
+    continueTitle: { color: colors.onAccent, fontSize: 16, fontWeight: "700" },
+    continueMeta: { color: colors.onAccent, marginTop: 2, opacity: 0.9 },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.text,
+      marginTop: 24,
+      marginBottom: 12,
+    },
+    emptyText: { color: colors.textMuted },
+    lastWorkoutCard: {
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+    },
+    lastWorkoutPlan: { fontSize: 16, fontWeight: "600", color: colors.text },
+    lastWorkoutDate: { color: colors.textMuted, marginTop: 2 },
+    quickWorkoutButton: {
+      backgroundColor: colors.success,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: "center",
+      marginTop: 28,
+    },
+    quickWorkoutButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    plansButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: "center",
+      marginTop: 12,
+    },
+    plansButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    bodyweightButton: {
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: "center",
+      marginTop: 12,
+    },
+    bodyweightButtonText: { color: colors.text, fontSize: 16, fontWeight: "600" },
+  });

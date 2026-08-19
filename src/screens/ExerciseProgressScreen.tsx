@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -7,6 +7,8 @@ import { getExerciseHistory } from "../storage/workouts";
 import type { ExerciseHistoryEntry } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import LineChart from "../components/LineChart";
+import { useTheme } from "../theme/ThemeContext";
+import type { ColorTokens } from "../theme/colors";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ExerciseProgress">;
 
@@ -20,6 +22,8 @@ const METRIC_LABELS: Record<Metric, string> = {
 };
 
 const ExerciseProgressScreen = ({ route }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { exerciseId, exerciseName } = route.params;
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
   const [unit, setUnit] = useState<WeightUnit>("lbs");
@@ -130,43 +134,45 @@ const formatShortDate = (iso: string): string => {
   });
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 16 },
-  emptyText: { color: "#666" },
-  metricTabs: { flexDirection: "row", gap: 8 },
-  metricTab: {
-    flex: 1,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  metricTabActive: { backgroundColor: "#2f6feb" },
-  metricTabText: { fontSize: 13, fontWeight: "600", color: "#666" },
-  metricTabTextActive: { color: "#fff" },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginTop: 20,
-    marginBottom: 12,
-  },
-  historyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#f2f2f2",
-    marginBottom: 8,
-  },
-  historyRowPR: {
-    backgroundColor: "#fff6e0",
-    borderWidth: 1,
-    borderColor: "#e8a400",
-  },
-  historyDate: { fontSize: 15, fontWeight: "600" },
-  historyPlan: { fontSize: 12, color: "#666", marginTop: 2 },
-  historyVolume: { fontSize: 12, color: "#999", marginTop: 2 },
-  historyWeight: { fontSize: 15, color: "#333" },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 32 },
+    title: { fontSize: 24, fontWeight: "700", color: colors.text, marginBottom: 16 },
+    emptyText: { color: colors.textMuted },
+    metricTabs: { flexDirection: "row", gap: 8 },
+    metricTab: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      paddingVertical: 10,
+      alignItems: "center",
+    },
+    metricTabActive: { backgroundColor: colors.primary },
+    metricTabText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+    metricTabTextActive: { color: colors.onAccent },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginTop: 20,
+      marginBottom: 12,
+    },
+    historyRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      marginBottom: 8,
+    },
+    historyRowPR: {
+      backgroundColor: colors.warningBg,
+      borderWidth: 1,
+      borderColor: colors.warning,
+    },
+    historyDate: { fontSize: 15, fontWeight: "600", color: colors.text },
+    historyPlan: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    historyVolume: { fontSize: 12, color: colors.textFaint, marginTop: 2 },
+    historyWeight: { fontSize: 15, color: colors.text },
+  });

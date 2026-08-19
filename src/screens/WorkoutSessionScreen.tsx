@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -35,10 +35,14 @@ import {
   LibraryExercise,
   MuscleGroup,
 } from "../storage/exerciseLibrary";
+import { useTheme } from "../theme/ThemeContext";
+import type { ColorTokens } from "../theme/colors";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkoutSession">;
 
 const WorkoutSessionScreen = ({ route, navigation }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { workoutId } = route.params;
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [restEndAt, setRestEndAt] = useState<number | null>(null);
@@ -306,7 +310,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   if (!workout) {
     return (
       <View style={styles.container}>
-        <Text>Workout not found.</Text>
+        <Text style={styles.emptyText}>Workout not found.</Text>
       </View>
     );
   }
@@ -410,6 +414,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     })
                   }
                   placeholder={unit}
+                  placeholderTextColor={colors.textFaint}
                   keyboardType="decimal-pad"
                 />
                 <TextInput
@@ -421,6 +426,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     })
                   }
                   placeholder={String(set.targetReps)}
+                  placeholderTextColor={colors.textFaint}
                   keyboardType="number-pad"
                 />
                 <Pressable
@@ -472,6 +478,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   value={newExerciseSets}
                   onChangeText={setNewExerciseSets}
                   placeholder="Sets"
+                  placeholderTextColor={colors.textFaint}
                   keyboardType="number-pad"
                 />
                 <TextInput
@@ -479,6 +486,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   value={newExerciseReps}
                   onChangeText={setNewExerciseReps}
                   placeholder="Reps"
+                  placeholderTextColor={colors.textFaint}
                   keyboardType="number-pad"
                 />
                 <TextInput
@@ -486,6 +494,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   value={newExerciseRest}
                   onChangeText={setNewExerciseRest}
                   placeholder="Rest s"
+                  placeholderTextColor={colors.textFaint}
                   keyboardType="number-pad"
                 />
               </View>
@@ -561,173 +570,177 @@ const formatRestTime = (totalSeconds: number): string => {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
-  contentWithRestBar: { paddingBottom: 112 },
-  title: { fontSize: 24, fontWeight: "700" },
-  subtitle: { color: "#666", marginTop: 4, marginBottom: 8 },
-  volumeText: { color: "#666", marginBottom: 16, fontSize: 13 },
-  exerciseBlock: {
-    marginBottom: 20,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#f2f2f2",
-  },
-  exerciseHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  exerciseNameButton: { flex: 1 },
-  exerciseName: { fontSize: 16, fontWeight: "600", color: "#2f6feb" },
-  removeExerciseButton: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-  },
-  removeExerciseText: { color: "#c00", fontSize: 15, fontWeight: "700" },
-  exerciseTarget: { color: "#666", marginTop: 2, marginBottom: 10 },
-  setHeaderRow: { flexDirection: "row", marginBottom: 6 },
-  setHeaderCell: { fontSize: 12, color: "#666", fontWeight: "600" },
-  setRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  setRowWarmup: { opacity: 0.7 },
-  setCell: { fontSize: 14 },
-  setCol: { width: 32 },
-  warmupCol: { width: 28, alignItems: "center" },
-  warmupChip: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: "#ccc",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  warmupChipActive: { backgroundColor: "#f5a623", borderColor: "#f5a623" },
-  warmupChipText: { fontSize: 11, fontWeight: "700", color: "#999" },
-  warmupChipTextActive: { color: "#fff" },
-  weightCol: { flex: 1, marginRight: 8 },
-  repsCol: { flex: 1, marginRight: 8 },
-  doneCol: { width: 40, alignItems: "center" },
-  setDeleteCol: { width: 28, alignItems: "center" },
-  setDeleteText: { color: "#c00", fontSize: 14, fontWeight: "700" },
-  addSetButton: { alignSelf: "flex-start", marginTop: 4, padding: 4 },
-  addSetButtonText: { color: "#2f6feb", fontSize: 13, fontWeight: "600" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 8,
-    fontSize: 14,
-    backgroundColor: "#fff",
-  },
-  checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: "#2f6feb",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxChecked: { backgroundColor: "#2f6feb" },
-  checkmark: { color: "#fff", fontWeight: "700" },
-  addExerciseBlock: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderStyle: "dashed",
-    marginBottom: 20,
-  },
-  addExerciseButtonText: {
-    color: "#2f6feb",
-    fontSize: 15,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  addExerciseNameInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 15,
-    backgroundColor: "#fff",
-    marginBottom: 8,
-  },
-  addExerciseRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  addExerciseNumberInput: { flex: 1 },
-  addExerciseActions: { flexDirection: "row", gap: 8 },
-  addExerciseConfirmButton: {
-    flex: 1,
-    backgroundColor: "#2f6feb",
-    borderRadius: 8,
-    padding: 10,
-    alignItems: "center",
-  },
-  addExerciseConfirmText: { color: "#fff", fontSize: 14, fontWeight: "600" },
-  addExerciseCancelButton: {
-    flex: 1,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 8,
-    padding: 10,
-    alignItems: "center",
-  },
-  addExerciseCancelText: { color: "#333", fontSize: 14, fontWeight: "600" },
-  actions: { flexDirection: "row", gap: 12, marginTop: 8 },
-  finishButton: {
-    flex: 1,
-    backgroundColor: "#2f6feb",
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-  },
-  finishButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  deleteButton: {
-    flex: 1,
-    backgroundColor: "#fdecea",
-    borderRadius: 8,
-    padding: 14,
-    alignItems: "center",
-  },
-  deleteButtonText: { color: "#c00", fontSize: 16, fontWeight: "600" },
-  restBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#1a1a1a",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 20,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  restLabel: { color: "#aaa", fontSize: 13, fontWeight: "600", marginRight: 10 },
-  restTime: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "700",
-    fontVariant: ["tabular-nums"],
-    marginRight: "auto",
-  },
-  restActions: { flexDirection: "row", gap: 8 },
-  restAdjustButton: {
-    backgroundColor: "#333",
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-  },
-  restAdjustText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  restSkipButton: {
-    backgroundColor: "#2f6feb",
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  restSkipText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 32 },
+    contentWithRestBar: { paddingBottom: 112 },
+    title: { fontSize: 24, fontWeight: "700", color: colors.text },
+    subtitle: { color: colors.textMuted, marginTop: 4, marginBottom: 8 },
+    volumeText: { color: colors.textMuted, marginBottom: 16, fontSize: 13 },
+    emptyText: { color: colors.textMuted },
+    exerciseBlock: {
+      marginBottom: 20,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+    },
+    exerciseHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    exerciseNameButton: { flex: 1 },
+    exerciseName: { fontSize: 16, fontWeight: "600", color: colors.primary },
+    removeExerciseButton: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      marginLeft: 8,
+    },
+    removeExerciseText: { color: colors.danger, fontSize: 15, fontWeight: "700" },
+    exerciseTarget: { color: colors.textMuted, marginTop: 2, marginBottom: 10 },
+    setHeaderRow: { flexDirection: "row", marginBottom: 6 },
+    setHeaderCell: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
+    setRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+    setRowWarmup: { opacity: 0.7 },
+    setCell: { fontSize: 14, color: colors.text },
+    setCol: { width: 32 },
+    warmupCol: { width: 28, alignItems: "center" },
+    warmupChip: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 1.5,
+      borderColor: colors.borderMuted,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    warmupChipActive: { backgroundColor: colors.warmup, borderColor: colors.warmup },
+    warmupChipText: { fontSize: 11, fontWeight: "700", color: colors.textFaint },
+    warmupChipTextActive: { color: colors.onAccent },
+    weightCol: { flex: 1, marginRight: 8 },
+    repsCol: { flex: 1, marginRight: 8 },
+    doneCol: { width: 40, alignItems: "center" },
+    setDeleteCol: { width: 28, alignItems: "center" },
+    setDeleteText: { color: colors.danger, fontSize: 14, fontWeight: "700" },
+    addSetButton: { alignSelf: "flex-start", marginTop: 4, padding: 4 },
+    addSetButtonText: { color: colors.primary, fontSize: 13, fontWeight: "600" },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 8,
+      fontSize: 14,
+      color: colors.text,
+      backgroundColor: colors.inputBackground,
+    },
+    checkbox: {
+      width: 26,
+      height: 26,
+      borderRadius: 6,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    checkboxChecked: { backgroundColor: colors.primary },
+    checkmark: { color: colors.onAccent, fontWeight: "700" },
+    addExerciseBlock: {
+      padding: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderStyle: "dashed",
+      marginBottom: 20,
+    },
+    addExerciseButtonText: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+    addExerciseNameInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 15,
+      color: colors.text,
+      backgroundColor: colors.inputBackground,
+      marginBottom: 8,
+    },
+    addExerciseRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+    addExerciseNumberInput: { flex: 1 },
+    addExerciseActions: { flexDirection: "row", gap: 8 },
+    addExerciseConfirmButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      padding: 10,
+      alignItems: "center",
+    },
+    addExerciseConfirmText: { color: colors.onAccent, fontSize: 14, fontWeight: "600" },
+    addExerciseCancelButton: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      padding: 10,
+      alignItems: "center",
+    },
+    addExerciseCancelText: { color: colors.text, fontSize: 14, fontWeight: "600" },
+    actions: { flexDirection: "row", gap: 12, marginTop: 8 },
+    finishButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      padding: 14,
+      alignItems: "center",
+    },
+    finishButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    deleteButton: {
+      flex: 1,
+      backgroundColor: colors.dangerBg,
+      borderRadius: 8,
+      padding: 14,
+      alignItems: "center",
+    },
+    deleteButtonText: { color: colors.danger, fontSize: 16, fontWeight: "600" },
+    restBar: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "#1a1a1a",
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 20,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    restLabel: { color: "#aaaaaa", fontSize: 13, fontWeight: "600", marginRight: 10 },
+    restTime: {
+      color: "#ffffff",
+      fontSize: 22,
+      fontWeight: "700",
+      fontVariant: ["tabular-nums"],
+      marginRight: "auto",
+    },
+    restActions: { flexDirection: "row", gap: 8 },
+    restAdjustButton: {
+      backgroundColor: "#333333",
+      borderRadius: 6,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+    },
+    restAdjustText: { color: "#ffffff", fontSize: 13, fontWeight: "600" },
+    restSkipButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 6,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    restSkipText: { color: colors.onAccent, fontSize: 13, fontWeight: "600" },
+  });

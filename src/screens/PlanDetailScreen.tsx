@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,10 +7,14 @@ import { deletePlan, getPlans } from '../storage/plans';
 import { getWorkoutsForPlan, saveWorkout } from '../storage/workouts';
 import type { Plan, Workout } from '../types';
 import { createWorkoutFromPlan } from '../utils/workout';
+import { useTheme } from '../theme/ThemeContext';
+import type { ColorTokens } from '../theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanDetail'>;
 
 const PlanDetailScreen = ({ route, navigation }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { planId } = route.params;
   const [plan, setPlan] = useState<Plan | null>(null);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -49,7 +53,7 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
   if (!plan) {
     return (
       <View style={styles.container}>
-        <Text>Plan not found.</Text>
+        <Text style={styles.emptyText}>Plan not found.</Text>
       </View>
     );
   }
@@ -143,51 +147,58 @@ const formatDate = (iso: string): string => {
   });
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
-  emptyText: { color: '#666' },
-  exerciseRow: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f2f2f2',
-    marginBottom: 8,
-  },
-  exerciseName: { fontSize: 16, fontWeight: '600' },
-  exerciseMeta: { color: '#666', marginTop: 2 },
-  startButton: {
-    backgroundColor: '#1a9c53',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  startButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 12 },
-  editButton: {
-    flex: 1,
-    backgroundColor: '#2f6feb',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-  },
-  editButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  deleteButton: {
-    flex: 1,
-    backgroundColor: '#fdecea',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-  },
-  deleteButtonText: { color: '#c00', fontSize: 16, fontWeight: '600' },
-  historyTitle: { fontSize: 18, fontWeight: '700', marginTop: 28, marginBottom: 12 },
-  workoutRow: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f2f2f2',
-    marginBottom: 8,
-  },
-  workoutDate: { fontSize: 15, fontWeight: '600' },
-  workoutMeta: { color: '#666', marginTop: 2 },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 32 },
+    title: { fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: 16 },
+    emptyText: { color: colors.textMuted },
+    exerciseRow: {
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      marginBottom: 8,
+    },
+    exerciseName: { fontSize: 16, fontWeight: '600', color: colors.text },
+    exerciseMeta: { color: colors.textMuted, marginTop: 2 },
+    startButton: {
+      backgroundColor: colors.success,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: 'center',
+      marginTop: 16,
+    },
+    startButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '600' },
+    actions: { flexDirection: 'row', gap: 12, marginTop: 12 },
+    editButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      padding: 14,
+      alignItems: 'center',
+    },
+    editButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '600' },
+    deleteButton: {
+      flex: 1,
+      backgroundColor: colors.dangerBg,
+      borderRadius: 8,
+      padding: 14,
+      alignItems: 'center',
+    },
+    deleteButtonText: { color: colors.danger, fontSize: 16, fontWeight: '600' },
+    historyTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginTop: 28,
+      marginBottom: 12,
+    },
+    workoutRow: {
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      marginBottom: 8,
+    },
+    workoutDate: { fontSize: 15, fontWeight: '600', color: colors.text },
+    workoutMeta: { color: colors.textMuted, marginTop: 2 },
+  });

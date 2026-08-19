@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -7,10 +7,14 @@ import { getWorkouts } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import { computeWorkoutVolume } from "../utils/workout";
 import type { Workout } from "../types";
+import { useTheme } from "../theme/ThemeContext";
+import type { ColorTokens } from "../theme/colors";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
 
 const HistoryScreen = ({ navigation }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [unit, setUnit] = useState<WeightUnit>("lbs");
 
@@ -85,29 +89,30 @@ const formatDate = (iso: string): string => {
   });
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
-  emptyText: { color: "#666" },
-  workoutRow: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#f2f2f2",
-    marginBottom: 8,
-  },
-  workoutRowHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  workoutPlan: { fontSize: 16, fontWeight: "600" },
-  inProgressChip: {
-    backgroundColor: "#1a9c53",
-    borderRadius: 10,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-  },
-  inProgressChipText: { color: "#fff", fontSize: 11, fontWeight: "700" },
-  workoutDate: { color: "#666", marginTop: 2 },
-  workoutMeta: { color: "#666", marginTop: 2, fontSize: 12 },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 32 },
+    emptyText: { color: colors.textMuted },
+    workoutRow: {
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      marginBottom: 8,
+    },
+    workoutRowHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    workoutPlan: { fontSize: 16, fontWeight: "600", color: colors.text },
+    inProgressChip: {
+      backgroundColor: colors.success,
+      borderRadius: 10,
+      paddingVertical: 3,
+      paddingHorizontal: 8,
+    },
+    inProgressChipText: { color: colors.onAccent, fontSize: 11, fontWeight: "700" },
+    workoutDate: { color: colors.textMuted, marginTop: 2 },
+    workoutMeta: { color: colors.textMuted, marginTop: 2, fontSize: 12 },
+  });

@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DashboardScreen from '../screens/DashboardScreen';
 import PlansListScreen from '../screens/PlansListScreen';
@@ -8,6 +8,8 @@ import WorkoutSessionScreen from '../screens/WorkoutSessionScreen';
 import ExerciseProgressScreen from '../screens/ExerciseProgressScreen';
 import BodyweightScreen from '../screens/BodyweightScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import { useTheme } from '../theme/ThemeContext';
 
 export type RootStackParamList = {
   Dashboard: undefined;
@@ -18,14 +20,36 @@ export type RootStackParamList = {
   ExerciseProgress: { exerciseId: string; exerciseName: string };
   Bodyweight: undefined;
   History: undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator = () => {
+  const { colors, isDark } = useTheme();
+
+  const navigationTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.background,
+      text: colors.text,
+      border: colors.border,
+    },
+  };
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Dashboard">
+    <NavigationContainer theme={navigationTheme}>
+      <Stack.Navigator
+        initialRouteName="Dashboard"
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
         <Stack.Screen
           name="Dashboard"
           component={DashboardScreen}
@@ -65,6 +89,11 @@ const RootNavigator = () => {
           name="History"
           component={HistoryScreen}
           options={{ title: 'History' }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ title: 'Settings' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

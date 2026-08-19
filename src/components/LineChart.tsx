@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
+import { useTheme } from "../theme/ThemeContext";
+import type { ColorTokens } from "../theme/colors";
 
 export type LineChartPoint = {
   x: number;
@@ -27,11 +29,15 @@ const MIN_POINT_SPACING = 48;
 const LineChart = ({
   points,
   height = 180,
-  color = "#2f6feb",
-  highlightColor = "#e8a400",
+  color,
+  highlightColor,
   unit = "",
   formatValue = (value) => String(value),
 }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const lineColor = color ?? colors.primary;
+  const pointHighlightColor = highlightColor ?? colors.warning;
   const [containerWidth, setContainerWidth] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -105,18 +111,18 @@ const LineChart = ({
               y1={PADDING_TOP + chartHeight}
               x2={svgWidth - PADDING_X}
               y2={PADDING_TOP + chartHeight}
-              stroke="#ddd"
+              stroke={colors.border}
               strokeWidth={1}
             />
-            <Path d={pathD} stroke={color} strokeWidth={2} fill="none" />
+            <Path d={pathD} stroke={lineColor} strokeWidth={2} fill="none" />
             {points.map((p, i) => (
               <Circle
                 key={`point-${i}`}
                 cx={scaleX(p.x)}
                 cy={scaleY(p.y)}
                 r={i === selectedIndex ? 7 : p.isHighlight ? 5 : 4}
-                fill={p.isHighlight ? highlightColor : color}
-                stroke="#fff"
+                fill={p.isHighlight ? pointHighlightColor : lineColor}
+                stroke={colors.background}
                 strokeWidth={i === selectedIndex ? 2 : 1}
                 onPress={() =>
                   setSelectedIndex((current) => (current === i ? null : i))
@@ -129,7 +135,7 @@ const LineChart = ({
                 x={scaleX(p.x)}
                 y={height - 6}
                 fontSize={10}
-                fill="#666"
+                fill={colors.textMuted}
                 textAnchor="middle"
               >
                 {p.label}
@@ -144,9 +150,10 @@ const LineChart = ({
 
 export default LineChart;
 
-const styles = StyleSheet.create({
-  tooltipSlot: { minHeight: 34, marginBottom: 4 },
-  tooltipValue: { fontSize: 15, fontWeight: "700", color: "#222" },
-  tooltipLabel: { fontSize: 12, color: "#666", marginTop: 1 },
-  tooltipHint: { fontSize: 12, color: "#999", fontStyle: "italic" },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    tooltipSlot: { minHeight: 34, marginBottom: 4 },
+    tooltipValue: { fontSize: 15, fontWeight: "700", color: colors.text },
+    tooltipLabel: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+    tooltipHint: { fontSize: 12, color: colors.textFaint, fontStyle: "italic" },
+  });

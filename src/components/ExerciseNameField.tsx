@@ -13,6 +13,8 @@ import {
   MUSCLE_GROUPS,
   MuscleGroup,
 } from "../storage/exerciseLibrary";
+import { useTheme } from "../theme/ThemeContext";
+import type { ColorTokens } from "../theme/colors";
 
 type Props = {
   value: string;
@@ -37,6 +39,8 @@ const ExerciseNameField = ({
   inputStyle,
   autoFocus,
 }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [isFocused, setIsFocused] = useState(false);
   const normalized = value.trim().toLowerCase();
 
@@ -74,6 +78,7 @@ const ExerciseNameField = ({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setTimeout(() => setIsFocused(false), 150)}
         placeholder={placeholder}
+        placeholderTextColor={colors.textFaint}
         autoFocus={autoFocus}
       />
       {showSuggestions && (
@@ -123,45 +128,47 @@ const ExerciseNameField = ({
 
 export default ExerciseNameField;
 
-const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#fff",
-  },
-  suggestions: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    marginTop: 4,
-    backgroundColor: "#fff",
-    overflow: "hidden",
-  },
-  suggestionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  suggestionName: { fontSize: 14, color: "#222" },
-  suggestionTag: { fontSize: 11, color: "#999" },
-  tagPicker: { marginTop: 6 },
-  tagPickerLabel: { fontSize: 11, color: "#999", marginBottom: 4 },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  tagChip: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
-  tagChipActive: { backgroundColor: "#2f6feb", borderColor: "#2f6feb" },
-  tagChipText: { fontSize: 12, color: "#666" },
-  tagChipTextActive: { color: "#fff", fontWeight: "600" },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.inputBackground,
+    },
+    suggestions: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      marginTop: 4,
+      backgroundColor: colors.inputBackground,
+      overflow: "hidden",
+    },
+    suggestionRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.divider,
+    },
+    suggestionName: { fontSize: 14, color: colors.text },
+    suggestionTag: { fontSize: 11, color: colors.textFaint },
+    tagPicker: { marginTop: 6 },
+    tagPickerLabel: { fontSize: 11, color: colors.textFaint, marginBottom: 4 },
+    tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    tagChip: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+    },
+    tagChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    tagChipText: { fontSize: 12, color: colors.textMuted },
+    tagChipTextActive: { color: colors.onAccent, fontWeight: "600" },
+  });

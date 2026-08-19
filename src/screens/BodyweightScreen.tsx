@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -19,12 +19,16 @@ import {
 import type { BodyweightEntry } from "../storage/bodyweight";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import LineChart from "../components/LineChart";
+import { useTheme } from "../theme/ThemeContext";
+import type { ColorTokens } from "../theme/colors";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Bodyweight">;
 
 const CHART_HEIGHT = 180;
 
 const BodyweightScreen = (_props: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [entries, setEntries] = useState<BodyweightEntry[]>([]);
   const [unit, setUnit] = useState<WeightUnit>("lbs");
   const [newWeight, setNewWeight] = useState("");
@@ -72,6 +76,7 @@ const BodyweightScreen = (_props: Props) => {
           value={newWeight}
           onChangeText={setNewWeight}
           placeholder={`Weight (${unit})`}
+          placeholderTextColor={colors.textFaint}
           keyboardType="decimal-pad"
         />
         <Pressable style={styles.logButton} onPress={handleLog}>
@@ -89,7 +94,7 @@ const BodyweightScreen = (_props: Props) => {
           <LineChart
             height={CHART_HEIGHT}
             unit={unit}
-            color="#1a9c53"
+            color={colors.success}
             points={entries.map((entry) => ({
               x: new Date(entry.date).getTime(),
               y: entry.weight,
@@ -135,45 +140,48 @@ const formatShortDate = (iso: string): string => {
   });
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 16 },
-  logRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#fff",
-  },
-  logInput: { flex: 1 },
-  logButton: {
-    backgroundColor: "#2f6feb",
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    justifyContent: "center",
-  },
-  logButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  emptyText: { color: "#666" },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginTop: 20,
-    marginBottom: 12,
-  },
-  historyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#f2f2f2",
-    marginBottom: 8,
-  },
-  historyDate: { fontSize: 15, fontWeight: "600" },
-  historyRight: { flexDirection: "row", alignItems: "center", gap: 12 },
-  historyWeight: { fontSize: 15, color: "#333" },
-  historyDeleteText: { fontSize: 15, color: "#c00", fontWeight: "700" },
-});
+const createStyles = (colors: ColorTokens) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 32 },
+    title: { fontSize: 24, fontWeight: "700", color: colors.text, marginBottom: 16 },
+    logRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.inputBackground,
+    },
+    logInput: { flex: 1 },
+    logButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 20,
+      justifyContent: "center",
+    },
+    logButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    emptyText: { color: colors.textMuted },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginTop: 20,
+      marginBottom: 12,
+    },
+    historyRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      marginBottom: 8,
+    },
+    historyDate: { fontSize: 15, fontWeight: "600", color: colors.text },
+    historyRight: { flexDirection: "row", alignItems: "center", gap: 12 },
+    historyWeight: { fontSize: 15, color: colors.text },
+    historyDeleteText: { fontSize: 15, color: colors.danger, fontWeight: "700" },
+  });
