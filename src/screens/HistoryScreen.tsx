@@ -1,9 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { getWorkouts } from "../storage/workouts";
+import { deleteWorkout, getWorkouts } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import { computeWorkoutVolume } from "../utils/workout";
 import type { Workout } from "../types";
@@ -18,16 +25,38 @@ const HistoryScreen = ({ navigation }: Props) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [unit, setUnit] = useState<WeightUnit>("lbs");
 
+  const load = useCallback(() => {
+    getWorkouts().then((all) =>
+      setWorkouts(
+        [...all].sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
+      ),
+    );
+    getWeightUnit().then(setUnit);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      getWorkouts().then((all) =>
-        setWorkouts(
-          [...all].sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
-        ),
-      );
-      getWeightUnit().then(setUnit);
-    }, []),
+      load();
+    }, [load]),
   );
+
+  const handleDelete = (workout: Workout) => {
+    Alert.alert(
+      "Delete workout",
+      `Discard the ${formatDate(workout.startedAt)} ${workout.planName} workout?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteWorkout(workout.id);
+            load();
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -37,29 +66,42 @@ const HistoryScreen = ({ navigation }: Props) => {
         workouts.map((workout) => {
           const volume = computeWorkoutVolume(workout);
           return (
-            <Pressable
-              key={workout.id}
-              style={styles.workoutRow}
-              onPress={() =>
-                navigation.navigate("WorkoutSession", { workoutId: workout.id })
-              }
-            >
-              <View style={styles.workoutRowHeader}>
-                <Text style={styles.workoutPlan}>{workout.planName}</Text>
-                {!workout.completedAt && (
-                  <View style={styles.inProgressChip}>
-                    <Text style={styles.inProgressChipText}>In progress</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.workoutDate}>
-                {formatDate(workout.startedAt)}
-              </Text>
-              <Text style={styles.workoutMeta}>
-                {countLoggedSets(workout)}/{countTotalSets(workout)} sets logged
-                {volume > 0 ? ` · ${volume.toLocaleString()} ${unit} volume` : ""}
-              </Text>
-            </Pressable>
+            <View key={workout.id} style={styles.workoutRow}>
+              <Pressable
+                style={styles.workoutRowMain}
+                onPress={() =>
+                  navigation.navigate("WorkoutSession", {
+                    workoutId: workout.id,
+                  })
+                }
+              >
+                <View style={styles.workoutRowHeader}>
+                  <Text style={styles.workoutPlan}>{workout.planName}</Text>
+                  {!workout.completedAt && (
+                    <View style={styles.inProgressChip}>
+                      <Text style={styles.inProgressChipText}>In progress</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.workoutDate}>
+                  {formatDate(workout.startedAt)}
+                </Text>
+                <Text style={styles.workoutMeta}>
+                  {countLoggedSets(workout)}/{countTotalSets(workout)} sets
+                  logged
+                  {volume > 0
+                    ? ` · ${volume.toLocaleString()} ${unit} volume`
+                    : ""}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.deleteButton}
+                onPress={() => handleDelete(workout)}
+                hitSlop={8}
+              >
+                <Text style={styles.deleteButtonText}>✕</Text>
+              </Pressable>
+            </View>
           );
         })
       )}
@@ -70,12 +112,16 @@ const HistoryScreen = ({ navigation }: Props) => {
 export default HistoryScreen;
 
 const countTotalSets = (workout: Workout): number => {
-  return workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
+  return workout.exercises.reduce(
+    (sum, exercise) => sum + exercise.sets.length,
+    0,
+  );
 };
 
 const countLoggedSets = (workout: Workout): number => {
   return workout.exercises.reduce(
-    (sum, exercise) => sum + exercise.sets.filter((set) => set.completed).length,
+    (sum, exercise) =>
+      sum + exercise.sets.filter((set) => set.completed).length,
     0,
   );
 };
@@ -95,11 +141,13 @@ const createStyles = (colors: ColorTokens) =>
     content: { padding: 16, paddingBottom: 32 },
     emptyText: { color: colors.textMuted },
     workoutRow: {
-      padding: 12,
+      flexDirection: "row",
+      alignItems: "center",
       borderRadius: 8,
       backgroundColor: colors.surface,
       marginBottom: 8,
     },
+    workoutRowMain: { flex: 1, padding: 12 },
     workoutRowHeader: {
       flexDirection: "row",
       alignItems: "center",
@@ -112,7 +160,18 @@ const createStyles = (colors: ColorTokens) =>
       paddingVertical: 3,
       paddingHorizontal: 8,
     },
-    inProgressChipText: { color: colors.onAccent, fontSize: 11, fontWeight: "700" },
+    inProgressChipText: {
+      color: colors.onAccent,
+      fontSize: 11,
+      fontWeight: "700",
+    },
     workoutDate: { color: colors.textMuted, marginTop: 2 },
     workoutMeta: { color: colors.textMuted, marginTop: 2, fontSize: 12 },
+    deleteButton: {
+      width: 40,
+      alignSelf: "stretch",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    deleteButtonText: { color: colors.danger, fontSize: 16, fontWeight: "700" },
   });

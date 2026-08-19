@@ -233,7 +233,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const toggleSetCompleted = (exerciseId: string, set: LoggedSet) => {
     const completed = !set.completed;
     updateSet(exerciseId, set.id, { completed });
-    if (completed) {
+    if (completed && !workout?.completedAt) {
       const exercise = workout?.exercises.find((e) => e.id === exerciseId);
       const restSeconds = exercise?.restSeconds ?? DEFAULT_REST_SECONDS;
       const endAt = Date.now() + restSeconds * 1000;
