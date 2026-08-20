@@ -21,6 +21,11 @@ import {
 } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import {
+  getRestTimer,
+  saveRestTimer,
+  clearRestTimer,
+} from "../storage/restTimer";
+import {
   computeWorkoutVolume,
   createLoggedExercise,
   DEFAULT_REST_SECONDS,
@@ -46,6 +51,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const { workoutId } = route.params;
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [restEndAt, setRestEndAt] = useState<number | null>(null);
+  const [restTotalSeconds, setRestTotalSeconds] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [unit, setUnit] = useState<WeightUnit>("lbs");
   const [isAddingExercise, setIsAddingExercise] = useState(false);
@@ -72,6 +78,21 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   );
 
   useEffect(() => {
+    getRestTimer().then((saved) => {
+      if (!saved || saved.workoutId !== workoutId) return;
+      if (saved.endAt <= Date.now()) {
+        clearRestTimer();
+        return;
+      }
+      restExerciseNameRef.current = saved.exerciseName;
+      restNotificationIdRef.current = saved.notificationId;
+      setNow(Date.now());
+      setRestEndAt(saved.endAt);
+      setRestTotalSeconds(saved.totalSeconds);
+    });
+  }, [workoutId]);
+
+  useEffect(() => {
     Notifications.requestPermissionsAsync();
   }, []);
 
@@ -86,18 +107,19 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
   const scheduleRestNotification = async (endAt: number) => {
     await cancelRestNotification();
-    restNotificationIdRef.current = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Rest complete",
-        body: restExerciseNameRef.current
-          ? `${restExerciseNameRef.current} time for your next set.`
-          : "Time for your next set.",
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: endAt,
-      },
-    });
+    restNotificationIdRef.current =
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Rest complete",
+          body: restExerciseNameRef.current
+            ? `${restExerciseNameRef.current} time for your next set.`
+            : "Time for your next set.",
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: endAt,
+        },
+      });
   };
 
   useEffect(() => {
@@ -107,29 +129,51 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   }, [restEndAt]);
 
   const restSecondsLeft =
-    restEndAt === null ? null : Math.max(0, Math.ceil((restEndAt - now) / 1000));
+    restEndAt === null
+      ? null
+      : Math.max(0, Math.ceil((restEndAt - now) / 1000));
 
   useEffect(() => {
     if (restSecondsLeft === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRestEndAt(null);
+      setRestTotalSeconds(null);
       restNotificationIdRef.current = null;
+      clearRestTimer();
     }
   }, [restSecondsLeft]);
+
+  const persistRestTimer = (endAt: number, totalSeconds: number) => {
+    saveRestTimer({
+      workoutId,
+      endAt,
+      totalSeconds,
+      exerciseName: restExerciseNameRef.current,
+      notificationId: restNotificationIdRef.current,
+    });
+  };
 
   const adjustRest = (deltaSeconds: number) => {
     setRestEndAt((prev) => {
       if (prev === null) return prev;
       const next = prev + deltaSeconds * 1000;
       const clamped = next <= Date.now() ? Date.now() : next;
-      scheduleRestNotification(clamped);
+      scheduleRestNotification(clamped).then(() => {
+        setRestTotalSeconds((prevTotal) => {
+          const nextTotal = Math.max(1, (prevTotal ?? 0) + deltaSeconds);
+          persistRestTimer(clamped, nextTotal);
+          return nextTotal;
+        });
+      });
       return clamped;
     });
   };
 
   const skipRest = () => {
     setRestEndAt(null);
+    setRestTotalSeconds(null);
     cancelRestNotification();
+    clearRestTimer();
   };
 
   const persist = async (next: Workout) => {
@@ -240,7 +284,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
       restExerciseNameRef.current = exercise?.name ?? "";
       setNow(Date.now());
       setRestEndAt(endAt);
-      scheduleRestNotification(endAt);
+      setRestTotalSeconds(restSeconds);
+      scheduleRestNotification(endAt).then(() =>
+        persistRestTimer(endAt, restSeconds),
+      );
     }
   };
 
@@ -265,7 +312,8 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
       ],
     });
     upsertLibraryExercise(name, newExerciseMuscleGroup).then((entry) => {
-      if (entry) setLibrary((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
+      if (entry)
+        setLibrary((prev) => [...prev.filter((e) => e.id !== entry.id), entry]);
     });
     setNewExerciseName("");
     setNewExerciseSets("3");
@@ -278,15 +326,14 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const handleFinish = async () => {
     if (!workout) return;
     await cancelRestNotification();
+    await clearRestTimer();
     const prNames = await getWorkoutPRs(workout);
     await persist({ ...workout, completedAt: new Date().toISOString() });
     if (prNames.length > 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(
-        "New PR!",
-        `${prNames.join(", ")}.`,
-        [{ text: "Nice", onPress: () => navigation.goBack() }],
-      );
+      Alert.alert("New PR!", `${prNames.join(", ")}.`, [
+        { text: "Nice", onPress: () => navigation.goBack() },
+      ]);
     } else {
       navigation.goBack();
     }
@@ -300,6 +347,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         style: "destructive",
         onPress: async () => {
           await cancelRestNotification();
+          await clearRestTimer();
           await deleteWorkout(workoutId);
           navigation.goBack();
         },
@@ -351,7 +399,9 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   })
                 }
               >
-                <Text style={styles.exerciseName}>{exercise.name || "Untitled"}</Text>
+                <Text style={styles.exerciseName}>
+                  {exercise.name || "Untitled"}
+                </Text>
               </Pressable>
               <Pressable
                 style={styles.removeExerciseButton}
@@ -534,18 +584,48 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
       {restSecondsLeft !== null && (
         <View style={styles.restBar}>
-          <Text style={styles.restLabel}>Rest</Text>
-          <Text style={styles.restTime}>{formatRestTime(restSecondsLeft)}</Text>
-          <View style={styles.restActions}>
-            <Pressable style={styles.restAdjustButton} onPress={() => adjustRest(-15)}>
-              <Text style={styles.restAdjustText}>-15s</Text>
-            </Pressable>
-            <Pressable style={styles.restAdjustButton} onPress={() => adjustRest(15)}>
-              <Text style={styles.restAdjustText}>+15s</Text>
-            </Pressable>
-            <Pressable style={styles.restSkipButton} onPress={skipRest}>
-              <Text style={styles.restSkipText}>Skip</Text>
-            </Pressable>
+          <View style={styles.restProgressTrack}>
+            <View
+              style={[
+                styles.restProgressFill,
+                {
+                  width: `${
+                    restTotalSeconds
+                      ? Math.min(
+                          100,
+                          Math.max(
+                            0,
+                            (restSecondsLeft / restTotalSeconds) * 100,
+                          ),
+                        )
+                      : 0
+                  }%`,
+                },
+              ]}
+            />
+          </View>
+          <View style={styles.restBarRow}>
+            <Text style={styles.restLabel}>Rest</Text>
+            <Text style={styles.restTime}>
+              {formatRestTime(restSecondsLeft)}
+            </Text>
+            <View style={styles.restActions}>
+              <Pressable
+                style={styles.restAdjustButton}
+                onPress={() => adjustRest(-15)}
+              >
+                <Text style={styles.restAdjustText}>-15s</Text>
+              </Pressable>
+              <Pressable
+                style={styles.restAdjustButton}
+                onPress={() => adjustRest(15)}
+              >
+                <Text style={styles.restAdjustText}>+15s</Text>
+              </Pressable>
+              <Pressable style={styles.restSkipButton} onPress={skipRest}>
+                <Text style={styles.restSkipText}>Skip</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       )}
@@ -600,7 +680,11 @@ const createStyles = (colors: ColorTokens) =>
       justifyContent: "center",
       marginLeft: 8,
     },
-    removeExerciseText: { color: colors.danger, fontSize: 15, fontWeight: "700" },
+    removeExerciseText: {
+      color: colors.danger,
+      fontSize: 15,
+      fontWeight: "700",
+    },
     exerciseTarget: { color: colors.textMuted, marginTop: 2, marginBottom: 10 },
     setHeaderRow: { flexDirection: "row", marginBottom: 6 },
     setHeaderCell: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
@@ -618,8 +702,15 @@ const createStyles = (colors: ColorTokens) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    warmupChipActive: { backgroundColor: colors.warmup, borderColor: colors.warmup },
-    warmupChipText: { fontSize: 11, fontWeight: "700", color: colors.textFaint },
+    warmupChipActive: {
+      backgroundColor: colors.warmup,
+      borderColor: colors.warmup,
+    },
+    warmupChipText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textFaint,
+    },
     warmupChipTextActive: { color: colors.onAccent },
     weightCol: { flex: 1, marginRight: 8 },
     repsCol: { flex: 1, marginRight: 8 },
@@ -627,7 +718,11 @@ const createStyles = (colors: ColorTokens) =>
     setDeleteCol: { width: 28, alignItems: "center" },
     setDeleteText: { color: colors.danger, fontSize: 14, fontWeight: "700" },
     addSetButton: { alignSelf: "flex-start", marginTop: 4, padding: 4 },
-    addSetButtonText: { color: colors.primary, fontSize: 13, fontWeight: "600" },
+    addSetButtonText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: "600",
+    },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -682,7 +777,11 @@ const createStyles = (colors: ColorTokens) =>
       padding: 10,
       alignItems: "center",
     },
-    addExerciseConfirmText: { color: colors.onAccent, fontSize: 14, fontWeight: "600" },
+    addExerciseConfirmText: {
+      color: colors.onAccent,
+      fontSize: 14,
+      fontWeight: "600",
+    },
     addExerciseCancelButton: {
       flex: 1,
       backgroundColor: colors.surface,
@@ -690,7 +789,11 @@ const createStyles = (colors: ColorTokens) =>
       padding: 10,
       alignItems: "center",
     },
-    addExerciseCancelText: { color: colors.text, fontSize: 14, fontWeight: "600" },
+    addExerciseCancelText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "600",
+    },
     actions: { flexDirection: "row", gap: 12, marginTop: 8 },
     finishButton: {
       flex: 1,
@@ -699,7 +802,11 @@ const createStyles = (colors: ColorTokens) =>
       padding: 14,
       alignItems: "center",
     },
-    finishButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    finishButtonText: {
+      color: colors.onAccent,
+      fontSize: 16,
+      fontWeight: "600",
+    },
     deleteButton: {
       flex: 1,
       backgroundColor: colors.dangerBg,
@@ -715,12 +822,28 @@ const createStyles = (colors: ColorTokens) =>
       bottom: 0,
       backgroundColor: "#1a1a1a",
       paddingHorizontal: 16,
-      paddingTop: 12,
+      paddingTop: 10,
       paddingBottom: 20,
-      flexDirection: "row",
-      alignItems: "center",
     },
-    restLabel: { color: "#aaaaaa", fontSize: 13, fontWeight: "600", marginRight: 10 },
+    restProgressTrack: {
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: "#333333",
+      overflow: "hidden",
+      marginBottom: 10,
+    },
+    restProgressFill: {
+      height: "100%",
+      borderRadius: 2,
+      backgroundColor: colors.primary,
+    },
+    restBarRow: { flexDirection: "row", alignItems: "center" },
+    restLabel: {
+      color: "#aaaaaa",
+      fontSize: 13,
+      fontWeight: "600",
+      marginRight: 10,
+    },
     restTime: {
       color: "#ffffff",
       fontSize: 22,
