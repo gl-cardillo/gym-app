@@ -83,10 +83,9 @@ export const getWorkoutPRs = async (workout: Workout): Promise<string[]> => {
     const history = await getExerciseHistory(exercise.exerciseId);
     const priorBest = history
       .filter((entry) => entry.workoutId !== workout.id)
-      .reduce<number | null>(
-        (max, entry) => (max === null ? entry.topWeight : Math.max(max, entry.topWeight)),
-        null,
-      );
+      .reduce<
+        number | null
+      >((max, entry) => (max === null ? entry.topWeight : Math.max(max, entry.topWeight)), null);
 
     if (priorBest !== null && sessionBest > priorBest) {
       prNames.push(exercise.name || "Untitled");
@@ -94,6 +93,86 @@ export const getWorkoutPRs = async (workout: Workout): Promise<string[]> => {
   }
 
   return prNames;
+};
+
+export type PersonalRecordEntry = {
+  value: number;
+  date: string;
+  workoutId: string;
+};
+
+export type PersonalRecord = {
+  exerciseId: string;
+  exerciseName: string;
+  bestWeight: PersonalRecordEntry | null;
+  bestReps: PersonalRecordEntry | null;
+  bestEstimatedOneRepMax: PersonalRecordEntry | null;
+};
+
+export const getPersonalRecords = async (): Promise<PersonalRecord[]> => {
+  const workouts = await getWorkouts();
+  const recordsById = new Map<string, PersonalRecord>();
+
+  for (const workout of workouts) {
+    const date = workout.completedAt ?? workout.startedAt;
+
+    for (const exercise of workout.exercises) {
+      let record = recordsById.get(exercise.exerciseId);
+      if (!record) {
+        record = {
+          exerciseId: exercise.exerciseId,
+          exerciseName: exercise.name || "Untitled",
+          bestWeight: null,
+          bestReps: null,
+          bestEstimatedOneRepMax: null,
+        };
+        recordsById.set(exercise.exerciseId, record);
+      } else if (exercise.name) {
+        record.exerciseName = exercise.name;
+      }
+
+      for (const set of exercise.sets) {
+        if (!set.completed || set.isWarmup) continue;
+
+        if (
+          set.weight !== null &&
+          (!record.bestWeight || set.weight > record.bestWeight.value)
+        ) {
+          record.bestWeight = {
+            value: set.weight,
+            date,
+            workoutId: workout.id,
+          };
+        }
+
+        if (
+          set.reps !== null &&
+          (!record.bestReps || set.reps > record.bestReps.value)
+        ) {
+          record.bestReps = { value: set.reps, date, workoutId: workout.id };
+        }
+
+        if (set.weight !== null && set.reps !== null) {
+          const oneRepMax = estimateOneRepMax(set.weight, set.reps);
+          if (
+            oneRepMax > 0 &&
+            (!record.bestEstimatedOneRepMax ||
+              oneRepMax > record.bestEstimatedOneRepMax.value)
+          ) {
+            record.bestEstimatedOneRepMax = {
+              value: oneRepMax,
+              date,
+              workoutId: workout.id,
+            };
+          }
+        }
+      }
+    }
+  }
+
+  return [...recordsById.values()]
+    .filter((r) => r.bestWeight || r.bestReps || r.bestEstimatedOneRepMax)
+    .sort((a, b) => a.exerciseName.localeCompare(b.exerciseName));
 };
 
 export const saveWorkout = async (workout: Workout): Promise<void> => {

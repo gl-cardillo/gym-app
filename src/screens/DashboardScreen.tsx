@@ -120,6 +120,13 @@ const DashboardScreen = ({ navigation }: Props) => {
 
       <Pressable
         style={styles.bodyweightButton}
+        onPress={() => navigation.navigate("Records")}
+      >
+        <Text style={styles.bodyweightButtonText}>Personal Records</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.bodyweightButton}
         onPress={() => navigation.navigate("Bodyweight")}
       >
         <Text style={styles.bodyweightButtonText}>Bodyweight Log</Text>
@@ -162,7 +169,11 @@ const createStyles = (colors: ColorTokens) =>
       paddingVertical: 6,
       paddingHorizontal: 14,
     },
-    settingsButtonText: { fontSize: 13, fontWeight: "700", color: colors.primary },
+    settingsButtonText: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.primary,
+    },
     statsRow: { flexDirection: "row", gap: 12 },
     statCard: {
       flex: 1,
@@ -208,7 +219,11 @@ const createStyles = (colors: ColorTokens) =>
       alignItems: "center",
       marginTop: 28,
     },
-    quickWorkoutButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    quickWorkoutButtonText: {
+      color: colors.onAccent,
+      fontSize: 16,
+      fontWeight: "600",
+    },
     plansButton: {
       backgroundColor: colors.primary,
       borderRadius: 8,
@@ -216,7 +231,11 @@ const createStyles = (colors: ColorTokens) =>
       alignItems: "center",
       marginTop: 12,
     },
-    plansButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    plansButtonText: {
+      color: colors.onAccent,
+      fontSize: 16,
+      fontWeight: "600",
+    },
     bodyweightButton: {
       backgroundColor: colors.surface,
       borderRadius: 8,
@@ -224,5 +243,9 @@ const createStyles = (colors: ColorTokens) =>
       alignItems: "center",
       marginTop: 12,
     },
-    bodyweightButtonText: { color: colors.text, fontSize: 16, fontWeight: "600" },
+    bodyweightButtonText: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: "600",
+    },
   });

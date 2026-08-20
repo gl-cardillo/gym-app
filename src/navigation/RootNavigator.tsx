@@ -1,15 +1,20 @@
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import DashboardScreen from '../screens/DashboardScreen';
-import PlansListScreen from '../screens/PlansListScreen';
-import PlanFormScreen from '../screens/PlanFormScreen';
-import PlanDetailScreen from '../screens/PlanDetailScreen';
-import WorkoutSessionScreen from '../screens/WorkoutSessionScreen';
-import ExerciseProgressScreen from '../screens/ExerciseProgressScreen';
-import BodyweightScreen from '../screens/BodyweightScreen';
-import HistoryScreen from '../screens/HistoryScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import { useTheme } from '../theme/ThemeContext';
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+} from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import DashboardScreen from "../screens/DashboardScreen";
+import PlansListScreen from "../screens/PlansListScreen";
+import PlanFormScreen from "../screens/PlanFormScreen";
+import PlanDetailScreen from "../screens/PlanDetailScreen";
+import WorkoutSessionScreen from "../screens/WorkoutSessionScreen";
+import ExerciseProgressScreen from "../screens/ExerciseProgressScreen";
+import BodyweightScreen from "../screens/BodyweightScreen";
+import HistoryScreen from "../screens/HistoryScreen";
+import RecordsScreen from "../screens/RecordsScreen";
+import SettingsScreen from "../screens/SettingsScreen";
+import { useTheme } from "../theme/ThemeContext";
 
 export type RootStackParamList = {
   Dashboard: undefined;
@@ -20,6 +25,7 @@ export type RootStackParamList = {
   ExerciseProgress: { exerciseId: string; exerciseName: string };
   Bodyweight: undefined;
   History: undefined;
+  Records: undefined;
   Settings: undefined;
 };
 
@@ -53,47 +59,52 @@ const RootNavigator = () => {
         <Stack.Screen
           name="Dashboard"
           component={DashboardScreen}
-          options={{ title: 'Dashboard' }}
+          options={{ title: "Dashboard" }}
         />
         <Stack.Screen
           name="PlansList"
           component={PlansListScreen}
-          options={{ title: 'My Plans' }}
+          options={{ title: "My Plans" }}
         />
         <Stack.Screen
           name="PlanForm"
           component={PlanFormScreen}
-          options={{ title: 'Plan' }}
+          options={{ title: "Plan" }}
         />
         <Stack.Screen
           name="PlanDetail"
           component={PlanDetailScreen}
-          options={{ title: 'Plan Detail' }}
+          options={{ title: "Plan Detail" }}
         />
         <Stack.Screen
           name="WorkoutSession"
           component={WorkoutSessionScreen}
-          options={{ title: 'Workout' }}
+          options={{ title: "Workout" }}
         />
         <Stack.Screen
           name="ExerciseProgress"
           component={ExerciseProgressScreen}
-          options={{ title: 'Progress' }}
+          options={{ title: "Progress" }}
         />
         <Stack.Screen
           name="Bodyweight"
           component={BodyweightScreen}
-          options={{ title: 'Bodyweight' }}
+          options={{ title: "Bodyweight" }}
         />
         <Stack.Screen
           name="History"
           component={HistoryScreen}
-          options={{ title: 'History' }}
+          options={{ title: "History" }}
+        />
+        <Stack.Screen
+          name="Records"
+          component={RecordsScreen}
+          options={{ title: "Personal Records" }}
         />
         <Stack.Screen
           name="Settings"
           component={SettingsScreen}
-          options={{ title: 'Settings' }}
+          options={{ title: "Settings" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
