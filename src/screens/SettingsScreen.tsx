@@ -14,7 +14,15 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { convertStoredWeights } from "../storage/workouts";
 import { convertStoredBodyweights } from "../storage/bodyweight";
-import { getWeightUnit, setWeightUnit, WeightUnit } from "../storage/settings";
+import { convertStoredMeasurements } from "../storage/measurements";
+import {
+  getLengthUnit,
+  getWeightUnit,
+  LengthUnit,
+  setLengthUnit,
+  setWeightUnit,
+  WeightUnit,
+} from "../storage/settings";
 import { exportBackupJson, restoreBackupJson } from "../storage/backup";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
@@ -33,12 +41,14 @@ const SettingsScreen = (_props: Props) => {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [unit, setUnit] = useState<WeightUnit>("lbs");
+  const [lengthUnit, setLengthUnitState] = useState<LengthUnit>("in");
   const [importText, setImportText] = useState("");
   const [isImporting, setIsImporting] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       getWeightUnit().then(setUnit);
+      getLengthUnit().then(setLengthUnitState);
     }, []),
   );
 
@@ -48,6 +58,13 @@ const SettingsScreen = (_props: Props) => {
     await convertStoredBodyweights(unit, next);
     setUnit(next);
     await setWeightUnit(next);
+  };
+
+  const toggleLengthUnit = async (next: LengthUnit) => {
+    if (next === lengthUnit) return;
+    await convertStoredMeasurements(lengthUnit, next);
+    setLengthUnitState(next);
+    await setLengthUnit(next);
   };
 
   const handleExport = async () => {
@@ -75,7 +92,10 @@ const SettingsScreen = (_props: Props) => {
               const count = await restoreBackupJson(importText);
               setImportText("");
               getWeightUnit().then(setUnit);
-              Alert.alert("Import complete", `Restored ${count} record${count === 1 ? "" : "s"}.`);
+              Alert.alert(
+                "Import complete",
+                `Restored ${count} record${count === 1 ? "" : "s"}.`,
+              );
             } catch (error) {
               Alert.alert(
                 "Import failed",
@@ -112,6 +132,29 @@ const SettingsScreen = (_props: Props) => {
         ))}
       </View>
 
+      <Text style={styles.sectionTitle}>Measurement Units</Text>
+      <View style={styles.segmentedRow}>
+        {(["in", "cm"] as LengthUnit[]).map((option) => (
+          <Pressable
+            key={option}
+            style={[
+              styles.segment,
+              lengthUnit === option && styles.segmentActive,
+            ]}
+            onPress={() => toggleLengthUnit(option)}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                lengthUnit === option && styles.segmentTextActive,
+              ]}
+            >
+              {option}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       <Text style={styles.sectionTitle}>Appearance</Text>
       <View style={styles.segmentedRow}>
         {THEME_OPTIONS.map((option) => (
@@ -137,8 +180,8 @@ const SettingsScreen = (_props: Props) => {
 
       <Text style={styles.sectionTitle}>Backup</Text>
       <Text style={styles.helperText}>
-        Export all your plans, workouts, bodyweight logs, and exercise library
-        as a JSON file you can save or send to yourself.
+        Export all your plans, workouts, bodyweight logs, body measurements, and
+        exercise library as a JSON file you can save or send to yourself.
       </Text>
       <Pressable style={styles.primaryButton} onPress={handleExport}>
         <Text style={styles.primaryButtonText}>Export Data</Text>
@@ -207,7 +250,11 @@ const createStyles = (colors: ColorTokens) =>
       alignItems: "center",
       marginTop: 12,
     },
-    primaryButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    primaryButtonText: {
+      color: colors.onAccent,
+      fontSize: 16,
+      fontWeight: "600",
+    },
     importInput: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -227,6 +274,10 @@ const createStyles = (colors: ColorTokens) =>
       alignItems: "center",
       marginTop: 12,
     },
-    secondaryButtonText: { color: colors.text, fontSize: 16, fontWeight: "600" },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: "600",
+    },
     buttonDisabled: { opacity: 0.5 },
   });

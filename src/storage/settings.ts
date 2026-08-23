@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "gym-app:settings:weightUnit";
 const THEME_STORAGE_KEY = "gym-app:settings:themeMode";
+const LENGTH_UNIT_STORAGE_KEY = "gym-app:settings:lengthUnit";
 
 export type WeightUnit = "lbs" | "kg";
 
@@ -29,4 +30,17 @@ export const getThemeMode = async (): Promise<ThemeMode> => {
 
 export const setThemeMode = async (mode: ThemeMode): Promise<void> => {
   await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
+};
+
+export type LengthUnit = "in" | "cm";
+
+export const DEFAULT_LENGTH_UNIT: LengthUnit = "in";
+
+export const getLengthUnit = async (): Promise<LengthUnit> => {
+  const raw = await AsyncStorage.getItem(LENGTH_UNIT_STORAGE_KEY);
+  return raw === "cm" ? "cm" : DEFAULT_LENGTH_UNIT;
+};
+
+export const setLengthUnit = async (unit: LengthUnit): Promise<void> => {
+  await AsyncStorage.setItem(LENGTH_UNIT_STORAGE_KEY, unit);
 };
