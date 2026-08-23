@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { deletePlan, getPlans } from '../storage/plans';
 import { getWorkoutsForPlan, saveWorkout } from '../storage/workouts';
+import { getWeightUnit } from '../storage/settings';
 import type { Plan, Workout } from '../types';
 import { createWorkoutFromPlan } from '../utils/workout';
 import { useTheme } from '../theme/ThemeContext';
@@ -45,7 +46,8 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
   const handleStartWorkout = async () => {
     if (!plan) return;
     const previousWorkout = workouts.find((w) => w.completedAt) ?? workouts[0] ?? null;
-    const workout = createWorkoutFromPlan(plan, previousWorkout);
+    const unit = await getWeightUnit();
+    const workout = createWorkoutFromPlan(plan, previousWorkout, unit);
     await saveWorkout(workout);
     navigation.navigate('WorkoutSession', { workoutId: workout.id });
   };

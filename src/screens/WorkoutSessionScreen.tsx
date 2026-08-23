@@ -30,6 +30,7 @@ import {
   createLoggedExercise,
   DEFAULT_REST_SECONDS,
   exerciseIdForName,
+  getOverloadSuggestion,
 } from "../utils/workout";
 import { generateId } from "../utils/id";
 import type { LoggedSet, Workout } from "../types";
@@ -50,6 +51,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { workoutId } = route.params;
   const [workout, setWorkout] = useState<Workout | null>(null);
+  const [previousWorkout, setPreviousWorkout] = useState<Workout | null>(null);
   const [restEndAt, setRestEndAt] = useState<number | null>(null);
   const [restTotalSeconds, setRestTotalSeconds] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -70,7 +72,21 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   useFocusEffect(
     useCallback(() => {
       getWorkouts().then((workouts) => {
-        setWorkout(workouts.find((w) => w.id === workoutId) ?? null);
+        const current = workouts.find((w) => w.id === workoutId) ?? null;
+        setWorkout(current);
+        const previous = current
+          ? workouts
+              .filter(
+                (w) =>
+                  w.id !== current.id &&
+                  w.planId === current.planId &&
+                  w.completedAt,
+              )
+              .sort((a, b) =>
+                (b.completedAt as string).localeCompare(a.completedAt as string),
+              )[0] ?? null
+          : null;
+        setPreviousWorkout(previous);
       });
       getWeightUnit().then(setUnit);
       getExerciseLibrary().then(setLibrary);
@@ -414,6 +430,23 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
               Target: {exercise.targetSets} x {exercise.targetReps} ·{" "}
               {exercise.restSeconds ?? DEFAULT_REST_SECONDS}s rest
             </Text>
+            {(() => {
+              const suggestion = getOverloadSuggestion(
+                previousWorkout?.exercises.find(
+                  (e) => e.exerciseId === exercise.exerciseId,
+                ),
+                exercise.targetReps,
+                unit,
+              );
+              if (!suggestion) return null;
+              return (
+                <Text style={styles.suggestionText}>
+                  {suggestion.hitTarget
+                    ? `Last: ${suggestion.lastWeight} ${unit} × ${suggestion.lastReps} · try ${suggestion.suggestedWeight} ${unit}`
+                    : `Last: ${suggestion.lastWeight} ${unit} × ${suggestion.lastReps} · aim for ${suggestion.targetReps} reps`}
+                </Text>
+              );
+            })()}
 
             <View style={styles.setHeaderRow}>
               <Text style={[styles.setHeaderCell, styles.setCol]}>Set</Text>
@@ -686,6 +719,13 @@ const createStyles = (colors: ColorTokens) =>
       fontWeight: "700",
     },
     exerciseTarget: { color: colors.textMuted, marginTop: 2, marginBottom: 10 },
+    suggestionText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: "600",
+      marginTop: -6,
+      marginBottom: 10,
+    },
     setHeaderRow: { flexDirection: "row", marginBottom: 6 },
     setHeaderCell: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
     setRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },

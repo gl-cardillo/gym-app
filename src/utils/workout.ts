@@ -1,7 +1,51 @@
 import { LoggedExercise, Plan, Workout } from "../types";
+import { WeightUnit } from "../storage/settings";
 import { generateId } from "./id";
 
 export const DEFAULT_REST_SECONDS = 90;
+
+const WEIGHT_INCREMENT: Record<WeightUnit, number> = { kg: 2.5, lbs: 5 };
+
+export type OverloadSuggestion = {
+  lastWeight: number;
+  lastReps: number;
+  targetReps: number;
+  suggestedWeight: number;
+  hitTarget: boolean;
+};
+
+export const getOverloadSuggestion = (
+  previousExercise: LoggedExercise | undefined | null,
+  targetReps: number,
+  unit: WeightUnit,
+): OverloadSuggestion | null => {
+  const workingSets = (previousExercise?.sets ?? []).filter(
+    (set) =>
+      set.completed &&
+      !set.isWarmup &&
+      set.weight !== null &&
+      set.reps !== null,
+  );
+  if (workingSets.length === 0) return null;
+
+  const topSet = workingSets.reduce((best, set) =>
+    (set.weight as number) > (best.weight as number) ? set : best,
+  );
+  const hitTarget = workingSets.every(
+    (set) => (set.reps as number) >= targetReps,
+  );
+  const suggestedWeight = hitTarget
+    ? Math.round(((topSet.weight as number) + WEIGHT_INCREMENT[unit]) * 10) / 10
+    : (topSet.weight as number);
+
+  return {
+    lastWeight: topSet.weight as number,
+    lastReps: topSet.reps as number,
+    targetReps,
+    suggestedWeight,
+    hitTarget,
+  };
+};
 
 export const exerciseIdForName = (name: string): string => {
   const slug = name
@@ -45,6 +89,7 @@ export const createLoggedExercise = (
 export const createWorkoutFromPlan = (
   plan: Plan,
   previousWorkout?: Workout | null,
+  unit: WeightUnit = "lbs",
 ): Workout => {
   const previousExercisesById = new Map(
     (previousWorkout?.exercises ?? []).map((exercise) => [
@@ -61,11 +106,16 @@ export const createWorkoutFromPlan = (
     completedAt: null,
     exercises: plan.exercises.map((exercise) => {
       const previous = previousExercisesById.get(exercise.id);
-      const prefillSets: SetPrefill[] = (previous?.sets ?? []).map((set) => ({
-        weight: set.weight,
-        reps: set.reps,
-        isWarmup: set.isWarmup,
-      }));
+      const suggestion = getOverloadSuggestion(previous, exercise.reps, unit);
+      const prefillSets: SetPrefill[] = (previous?.sets ?? []).map((set) =>
+        set.isWarmup
+          ? { weight: set.weight, reps: set.reps, isWarmup: true }
+          : {
+              weight: suggestion ? suggestion.suggestedWeight : set.weight,
+              reps: suggestion ? suggestion.targetReps : set.reps,
+              isWarmup: false,
+            },
+      );
       return createLoggedExercise(
         exercise.name,
         exercise.sets,
@@ -98,7 +148,12 @@ export const computeWorkoutVolume = (workout: Workout): number => {
     (total, exercise) =>
       total +
       exercise.sets.reduce((sum, set) => {
-        if (!set.completed || set.isWarmup || set.weight === null || set.reps === null) {
+        if (
+          !set.completed ||
+          set.isWarmup ||
+          set.weight === null ||
+          set.reps === null
+        ) {
           return sum;
         }
         return sum + set.weight * set.reps;
