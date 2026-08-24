@@ -9,7 +9,7 @@ export type DashboardStats = {
   inProgressWorkout: Workout | null;
 };
 
-const startOfWeek = (date: Date): Date => {
+export const startOfWeek = (date: Date): Date => {
   const d = new Date(date);
   const day = d.getDay();
   const diffToMonday = day === 0 ? -6 : 1 - day;

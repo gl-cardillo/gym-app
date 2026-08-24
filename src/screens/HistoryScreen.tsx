@@ -16,6 +16,7 @@ import { computeWorkoutVolume } from "../utils/workout";
 import type { Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import WorkoutHeatmap from "../components/WorkoutHeatmap";
 
 type Props = TabScreenProps<"History">;
 
@@ -61,6 +62,9 @@ const HistoryScreen = ({ navigation }: Props) => {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
     <ScrollView contentContainerStyle={styles.content}>
+      {workouts.some((w) => w.completedAt) && (
+        <WorkoutHeatmap workouts={workouts} />
+      )}
       {workouts.length === 0 ? (
         <Text style={styles.emptyText}>No workouts logged yet.</Text>
       ) : (

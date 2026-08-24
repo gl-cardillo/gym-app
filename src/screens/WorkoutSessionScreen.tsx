@@ -66,6 +66,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [newExerciseMuscleGroup, setNewExerciseMuscleGroup] =
     useState<MuscleGroup | null>(null);
   const [library, setLibrary] = useState<LibraryExercise[]>([]);
+  const [expandedSetIds, setExpandedSetIds] = useState<Set<string>>(new Set());
   const restNotificationIdRef = useRef<string | null>(null);
   const restExerciseNameRef = useRef<string>("");
 
@@ -235,6 +236,8 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   reps: null,
                   isWarmup: false,
                   completed: false,
+                  rpe: null,
+                  note: "",
                 },
               ],
             }
@@ -288,6 +291,18 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         },
       ],
     );
+  };
+
+  const toggleSetExpanded = (setId: string) => {
+    setExpandedSetIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(setId)) {
+        next.delete(setId);
+      } else {
+        next.add(setId);
+      }
+      return next;
+    });
   };
 
   const toggleSetCompleted = (exerciseId: string, set: LoggedSet) => {
@@ -456,12 +471,13 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
               </Text>
               <Text style={[styles.setHeaderCell, styles.repsCol]}>Reps</Text>
               <Text style={[styles.setHeaderCell, styles.doneCol]}>Done</Text>
+              <Text style={[styles.setHeaderCell, styles.noteCol]} />
               <Text style={[styles.setHeaderCell, styles.setDeleteCol]} />
             </View>
 
             {exercise.sets.map((set, index) => (
+              <View key={set.id}>
               <View
-                key={set.id}
                 style={[styles.setRow, set.isWarmup && styles.setRowWarmup]}
               >
                 <Text style={[styles.setCell, styles.setCol]}>{index + 1}</Text>
@@ -526,11 +542,57 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   </View>
                 </Pressable>
                 <Pressable
+                  style={styles.noteCol}
+                  onPress={() => toggleSetExpanded(set.id)}
+                  hitSlop={6}
+                >
+                  <Text
+                    style={[
+                      styles.noteIcon,
+                      (set.rpe !== null || !!set.note) &&
+                        styles.noteIconActive,
+                    ]}
+                  >
+                    📝
+                  </Text>
+                </Pressable>
+                <Pressable
                   style={styles.setDeleteCol}
                   onPress={() => deleteSet(exercise.id, set.id)}
                 >
                   <Text style={styles.setDeleteText}>✕</Text>
                 </Pressable>
+              </View>
+
+              {expandedSetIds.has(set.id) && (
+                <View style={styles.setDetailPanel}>
+                  <View style={styles.rpeRow}>
+                    <Text style={styles.rpeLabel}>RPE</Text>
+                    <TextInput
+                      style={[styles.input, styles.rpeInput]}
+                      value={set.rpe === null ? "" : String(set.rpe)}
+                      onChangeText={(text) =>
+                        updateSet(exercise.id, set.id, {
+                          rpe: text === "" ? null : Number(text) || 0,
+                        })
+                      }
+                      placeholder="1-10"
+                      placeholderTextColor={colors.textFaint}
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                  <TextInput
+                    style={[styles.input, styles.noteInput]}
+                    value={set.note}
+                    onChangeText={(text) =>
+                      updateSet(exercise.id, set.id, { note: text })
+                    }
+                    placeholder="How did it feel? (optional)"
+                    placeholderTextColor={colors.textFaint}
+                    multiline
+                  />
+                </View>
+              )}
               </View>
             ))}
 
@@ -755,8 +817,28 @@ const createStyles = (colors: ColorTokens) =>
     weightCol: { flex: 1, marginRight: 8 },
     repsCol: { flex: 1, marginRight: 8 },
     doneCol: { width: 40, alignItems: "center" },
+    noteCol: { width: 28, alignItems: "center" },
+    noteIcon: { fontSize: 14, opacity: 0.35 },
+    noteIconActive: { opacity: 1 },
     setDeleteCol: { width: 28, alignItems: "center" },
     setDeleteText: { color: colors.danger, fontSize: 14, fontWeight: "700" },
+    setDetailPanel: {
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 8,
+      padding: 10,
+      marginTop: -4,
+      marginBottom: 10,
+    },
+    rpeRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+    rpeLabel: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontWeight: "600",
+      marginRight: 8,
+      width: 32,
+    },
+    rpeInput: { width: 64 },
+    noteInput: { minHeight: 40, textAlignVertical: "top" },
     addSetButton: { alignSelf: "flex-start", marginTop: 4, padding: 4 },
     addSetButtonText: {
       color: colors.primary,

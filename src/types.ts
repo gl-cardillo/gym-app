@@ -19,6 +19,8 @@ export type LoggedSet = {
   reps: number | null;
   isWarmup: boolean;
   completed: boolean;
+  rpe: number | null;
+  note: string;
 };
 
 export type LoggedExercise = {

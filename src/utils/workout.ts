@@ -83,6 +83,8 @@ export const createLoggedExercise = (
     reps: prefillSets[index]?.reps ?? null,
     isWarmup: prefillSets[index]?.isWarmup ?? false,
     completed: false,
+    rpe: null,
+    note: "",
   })),
 });
 
