@@ -7,9 +7,9 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/RootNavigator";
+import type { TabScreenProps } from "../navigation/RootNavigator";
 import { deleteWorkout, getWorkouts } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import { computeWorkoutVolume } from "../utils/workout";
@@ -17,7 +17,7 @@ import type { Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 
-type Props = NativeStackScreenProps<RootStackParamList, "History">;
+type Props = TabScreenProps<"History">;
 
 const HistoryScreen = ({ navigation }: Props) => {
   const { colors } = useTheme();
@@ -59,7 +59,8 @@ const HistoryScreen = ({ navigation }: Props) => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <ScrollView contentContainerStyle={styles.content}>
       {workouts.length === 0 ? (
         <Text style={styles.emptyText}>No workouts logged yet.</Text>
       ) : (
@@ -106,6 +107,7 @@ const HistoryScreen = ({ navigation }: Props) => {
         })
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 };
 

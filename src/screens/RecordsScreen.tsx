@@ -1,14 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/RootNavigator";
+import type { TabScreenProps } from "../navigation/RootNavigator";
 import { getPersonalRecords, PersonalRecord } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Records">;
+type Props = TabScreenProps<"Records">;
 
 const RecordsScreen = ({ navigation }: Props) => {
   const { colors } = useTheme();
@@ -24,7 +24,8 @@ const RecordsScreen = ({ navigation }: Props) => {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <ScrollView contentContainerStyle={styles.content}>
       {records.length === 0 ? (
         <Text style={styles.emptyText}>
           No personal records yet. Log some completed sets to see your bests
@@ -86,6 +87,7 @@ const RecordsScreen = ({ navigation }: Props) => {
         ))
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 };
 

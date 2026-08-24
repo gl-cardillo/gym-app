@@ -1,14 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/RootNavigator';
+import type { TabScreenProps } from '../navigation/RootNavigator';
 import { getPlans } from '../storage/plans';
 import type { Plan } from '../types';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorTokens } from '../theme/colors';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'PlansList'>;
+type Props = TabScreenProps<'PlansList'>;
 
 const PlansListScreen = ({ navigation }: Props) => {
   const { colors } = useTheme();
@@ -22,7 +22,7 @@ const PlansListScreen = ({ navigation }: Props) => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <FlatList
         data={plans}
         keyExtractor={(item) => item.id}
@@ -46,7 +46,7 @@ const PlansListScreen = ({ navigation }: Props) => {
       >
         <Text style={styles.addButtonText}>+ New Plan</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 };
 

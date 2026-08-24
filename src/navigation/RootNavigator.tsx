@@ -4,6 +4,12 @@ import {
   NavigationContainer,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import {
+  createBottomTabNavigator,
+  type BottomTabScreenProps,
+} from "@react-navigation/bottom-tabs";
+import type { CompositeScreenProps } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import DashboardScreen from "../screens/DashboardScreen";
 import PlansListScreen from "../screens/PlansListScreen";
 import PlanFormScreen from "../screens/PlanFormScreen";
@@ -17,21 +23,94 @@ import RecordsScreen from "../screens/RecordsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import { useTheme } from "../theme/ThemeContext";
 
-export type RootStackParamList = {
+export type TabParamList = {
   Dashboard: undefined;
   PlansList: undefined;
+  History: undefined;
+  Records: undefined;
+  Settings: undefined;
+};
+
+export type RootStackParamList = {
+  Tabs: undefined;
   PlanForm: { planId?: string };
   PlanDetail: { planId: string };
   WorkoutSession: { workoutId: string };
   ExerciseProgress: { exerciseId: string; exerciseName: string };
   Bodyweight: undefined;
   Measurements: undefined;
-  History: undefined;
-  Records: undefined;
-  Settings: undefined;
 };
 
+export type TabScreenProps<T extends keyof TabParamList> = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, T>,
+  import("@react-navigation/native-stack").NativeStackScreenProps<RootStackParamList>
+>;
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
+
+const TAB_ICONS: Record<keyof TabParamList, keyof typeof Ionicons.glyphMap> = {
+  Dashboard: "home",
+  PlansList: "list",
+  History: "time",
+  Records: "trophy",
+  Settings: "settings",
+};
+
+const TabNavigator = () => {
+  const { colors } = useTheme();
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+        },
+        tabBarIcon: ({ color, size, focused }) => (
+          <Ionicons
+            name={
+              focused
+                ? TAB_ICONS[route.name as keyof TabParamList]
+                : (`${TAB_ICONS[route.name as keyof TabParamList]}-outline` as keyof typeof Ionicons.glyphMap)
+            }
+            color={color}
+            size={size}
+          />
+        ),
+      })}
+    >
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{ title: "Dashboard" }}
+      />
+      <Tab.Screen
+        name="PlansList"
+        component={PlansListScreen}
+        options={{ title: "Plans" }}
+      />
+      <Tab.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{ title: "History" }}
+      />
+      <Tab.Screen
+        name="Records"
+        component={RecordsScreen}
+        options={{ title: "Records" }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: "Settings" }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 const RootNavigator = () => {
   const { colors, isDark } = useTheme();
@@ -51,7 +130,7 @@ const RootNavigator = () => {
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
-        initialRouteName="Dashboard"
+        initialRouteName="Tabs"
         screenOptions={{
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
@@ -59,14 +138,9 @@ const RootNavigator = () => {
         }}
       >
         <Stack.Screen
-          name="Dashboard"
-          component={DashboardScreen}
-          options={{ title: "Dashboard" }}
-        />
-        <Stack.Screen
-          name="PlansList"
-          component={PlansListScreen}
-          options={{ title: "My Plans" }}
+          name="Tabs"
+          component={TabNavigator}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="PlanForm"
@@ -97,21 +171,6 @@ const RootNavigator = () => {
           name="Measurements"
           component={MeasurementsScreen}
           options={{ title: "Measurements" }}
-        />
-        <Stack.Screen
-          name="History"
-          component={HistoryScreen}
-          options={{ title: "History" }}
-        />
-        <Stack.Screen
-          name="Records"
-          component={RecordsScreen}
-          options={{ title: "Personal Records" }}
-        />
-        <Stack.Screen
-          name="Settings"
-          component={SettingsScreen}
-          options={{ title: "Settings" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -9,9 +9,9 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/RootNavigator";
+import type { TabScreenProps } from "../navigation/RootNavigator";
 import { convertStoredWeights } from "../storage/workouts";
 import { convertStoredBodyweights } from "../storage/bodyweight";
 import { convertStoredMeasurements } from "../storage/measurements";
@@ -28,7 +28,7 @@ import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import type { ThemeMode } from "../storage/settings";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
+type Props = TabScreenProps<"Settings">;
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: "light", label: "Light" },
@@ -111,7 +111,8 @@ const SettingsScreen = (_props: Props) => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.sectionTitle}>Units</Text>
       <View style={styles.segmentedRow}>
         {(["lbs", "kg"] as WeightUnit[]).map((option) => (
@@ -214,6 +215,7 @@ const SettingsScreen = (_props: Props) => {
         </Text>
       </Pressable>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
