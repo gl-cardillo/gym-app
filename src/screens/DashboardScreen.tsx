@@ -4,10 +4,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { TabScreenProps } from "../navigation/RootNavigator";
 import { getWorkouts, saveWorkout } from "../storage/workouts";
-import { computeDashboardStats, DashboardStats } from "../utils/stats";
+import { getExerciseLibrary } from "../storage/exerciseLibrary";
+import { getWeightUnit, WeightUnit } from "../storage/settings";
+import {
+  computeDashboardStats,
+  computeMuscleGroupVolume,
+  DashboardStats,
+  MuscleGroupVolume,
+  startOfWeek,
+} from "../utils/stats";
 import { createEmptyWorkout } from "../utils/workout";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import MuscleGroupVolumeChart from "../components/MuscleGroupVolumeChart";
 
 type Props = TabScreenProps<"Dashboard">;
 
@@ -24,11 +33,28 @@ const DashboardScreen = ({ navigation }: Props) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
+  const [muscleGroupVolume, setMuscleGroupVolume] = useState<
+    MuscleGroupVolume[]
+  >([]);
+  const [unit, setUnit] = useState<WeightUnit>("lbs");
 
   useFocusEffect(
     useCallback(() => {
-      getWorkouts().then((workouts) =>
-        setStats(computeDashboardStats(workouts)),
+      Promise.all([getWorkouts(), getExerciseLibrary(), getWeightUnit()]).then(
+        ([workouts, library, weightUnit]) => {
+          setStats(computeDashboardStats(workouts));
+          setUnit(weightUnit);
+
+          const weekStart = startOfWeek(new Date()).getTime();
+          const thisWeekWorkouts = workouts.filter(
+            (w) =>
+              w.completedAt &&
+              startOfWeek(new Date(w.completedAt)).getTime() === weekStart,
+          );
+          setMuscleGroupVolume(
+            computeMuscleGroupVolume(thisWeekWorkouts, library),
+          );
+        },
       );
     }, []),
   );
@@ -59,6 +85,10 @@ const DashboardScreen = ({ navigation }: Props) => {
             <Text style={styles.statValue}>{stats.prsThisWeek}</Text>
             <Text style={styles.statLabel}>PRs this week</Text>
           </View>
+        </View>
+
+        <View style={styles.volumeChart}>
+          <MuscleGroupVolumeChart data={muscleGroupVolume} unit={unit} />
         </View>
 
         {stats.inProgressWorkout && (
@@ -135,6 +165,7 @@ const createStyles = (colors: ColorTokens) =>
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, paddingBottom: 32 },
     statsRow: { flexDirection: "row", gap: 12 },
+    volumeChart: { marginTop: 16 },
     statCard: {
       flex: 1,
       backgroundColor: colors.surface,

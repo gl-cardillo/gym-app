@@ -145,21 +145,23 @@ export const estimateOneRepMax = (weight: number, reps: number): number => {
   return Math.round(weight * (1 + reps / 30) * 10) / 10;
 };
 
+export const computeExerciseVolume = (exercise: LoggedExercise): number => {
+  return exercise.sets.reduce((sum, set) => {
+    if (
+      !set.completed ||
+      set.isWarmup ||
+      set.weight === null ||
+      set.reps === null
+    ) {
+      return sum;
+    }
+    return sum + set.weight * set.reps;
+  }, 0);
+};
+
 export const computeWorkoutVolume = (workout: Workout): number => {
   return workout.exercises.reduce(
-    (total, exercise) =>
-      total +
-      exercise.sets.reduce((sum, set) => {
-        if (
-          !set.completed ||
-          set.isWarmup ||
-          set.weight === null ||
-          set.reps === null
-        ) {
-          return sum;
-        }
-        return sum + set.weight * set.reps;
-      }, 0),
+    (total, exercise) => total + computeExerciseVolume(exercise),
     0,
   );
 };

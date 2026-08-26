@@ -1,4 +1,6 @@
 import { Workout } from "../types";
+import type { LibraryExercise } from "../storage/exerciseLibrary";
+import { computeExerciseVolume } from "./workout";
 
 export type DashboardStats = {
   totalWorkouts: number;
@@ -97,4 +99,32 @@ export const computeDashboardStats = (workouts: Workout[]): DashboardStats => {
     lastCompletedWorkout,
     inProgressWorkout,
   };
+};
+
+export type MuscleGroupVolume = {
+  muscleGroup: string;
+  volume: number;
+};
+
+export const computeMuscleGroupVolume = (
+  workouts: Workout[],
+  library: LibraryExercise[],
+): MuscleGroupVolume[] => {
+  const groupById = new Map(
+    library.map((entry) => [entry.id, entry.muscleGroup]),
+  );
+  const volumeByGroup = new Map<string, number>();
+
+  for (const workout of workouts) {
+    for (const exercise of workout.exercises) {
+      const volume = computeExerciseVolume(exercise);
+      if (volume <= 0) continue;
+      const group = groupById.get(exercise.exerciseId) ?? "Other";
+      volumeByGroup.set(group, (volumeByGroup.get(group) ?? 0) + volume);
+    }
+  }
+
+  return [...volumeByGroup.entries()]
+    .map(([muscleGroup, volume]) => ({ muscleGroup, volume }))
+    .sort((a, b) => b.volume - a.volume);
 };
