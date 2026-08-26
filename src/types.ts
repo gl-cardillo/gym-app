@@ -4,6 +4,7 @@ export type Exercise = {
   sets: number;
   reps: number;
   restSeconds: number;
+  linkedToNext?: boolean;
 };
 
 export type Plan = {
@@ -30,6 +31,7 @@ export type LoggedExercise = {
   targetSets: number;
   targetReps: number;
   restSeconds: number;
+  linkedToNext?: boolean;
   sets: LoggedSet[];
 };
 

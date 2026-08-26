@@ -29,8 +29,10 @@ import {
   computeWorkoutVolume,
   createLoggedExercise,
   DEFAULT_REST_SECONDS,
+  estimateOneRepMax,
   exerciseIdForName,
   getOverloadSuggestion,
+  groupByLinkedToNext,
 } from "../utils/workout";
 import { generateId } from "../utils/id";
 import type { LoggedSet, Workout } from "../types";
@@ -308,8 +310,8 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const toggleSetCompleted = (exerciseId: string, set: LoggedSet) => {
     const completed = !set.completed;
     updateSet(exerciseId, set.id, { completed });
-    if (completed && !workout?.completedAt) {
-      const exercise = workout?.exercises.find((e) => e.id === exerciseId);
+    const exercise = workout?.exercises.find((e) => e.id === exerciseId);
+    if (completed && !workout?.completedAt && !exercise?.linkedToNext) {
       const restSeconds = exercise?.restSeconds ?? DEFAULT_REST_SECONDS;
       const endAt = Date.now() + restSeconds * 1000;
       restExerciseNameRef.current = exercise?.name ?? "";
@@ -418,8 +420,19 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
           </Text>
         )}
 
-        {workout.exercises.map((exercise) => (
-          <View key={exercise.id} style={styles.exerciseBlock}>
+        {groupByLinkedToNext(workout.exercises).map((group) => (
+          <View key={group[0].id} style={styles.exerciseBlock}>
+          {group.length > 1 && (
+            <Text style={styles.supersetLabel}>
+              {group.length > 2 ? "🔗 Circuit" : "🔗 Superset"} ·{" "}
+              {group.length} exercises
+            </Text>
+          )}
+          {group.map((exercise, groupIndex) => (
+          <View
+            key={exercise.id}
+            style={groupIndex > 0 ? styles.supersetItemDivider : undefined}
+          >
             <View style={styles.exerciseHeaderRow}>
               <Pressable
                 style={styles.exerciseNameButton}
@@ -564,6 +577,16 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                 </Pressable>
               </View>
 
+              {!set.isWarmup &&
+                set.weight !== null &&
+                set.weight > 0 &&
+                set.reps !== null &&
+                set.reps > 0 && (
+                  <Text style={styles.oneRepMaxText}>
+                    Est. 1RM: {estimateOneRepMax(set.weight, set.reps)} {unit}
+                  </Text>
+                )}
+
               {expandedSetIds.has(set.id) && (
                 <View style={styles.setDetailPanel}>
                   <View style={styles.rpeRow}>
@@ -602,6 +625,8 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             >
               <Text style={styles.addSetButtonText}>+ Add Set</Text>
             </Pressable>
+          </View>
+          ))}
           </View>
         ))}
 
@@ -760,6 +785,18 @@ const createStyles = (colors: ColorTokens) =>
       borderRadius: 8,
       backgroundColor: colors.surface,
     },
+    supersetLabel: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.primary,
+      marginBottom: 10,
+    },
+    supersetItemDivider: {
+      borderTopWidth: 1,
+      borderTopColor: colors.divider,
+      marginTop: 14,
+      paddingTop: 14,
+    },
     exerciseHeaderRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -792,6 +829,13 @@ const createStyles = (colors: ColorTokens) =>
     setHeaderCell: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
     setRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
     setRowWarmup: { opacity: 0.7 },
+    oneRepMaxText: {
+      fontSize: 11,
+      color: colors.textFaint,
+      marginLeft: 60,
+      marginTop: -6,
+      marginBottom: 8,
+    },
     setCell: { fontSize: 14, color: colors.text },
     setCol: { width: 32 },
     warmupCol: { width: 28, alignItems: "center" },

@@ -7,7 +7,7 @@ import { deletePlan, getPlans } from '../storage/plans';
 import { getWorkoutsForPlan, saveWorkout } from '../storage/workouts';
 import { getWeightUnit } from '../storage/settings';
 import type { Plan, Workout } from '../types';
-import { createWorkoutFromPlan } from '../utils/workout';
+import { createWorkoutFromPlan, groupByLinkedToNext } from '../utils/workout';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorTokens } from '../theme/colors';
 
@@ -67,22 +67,35 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
       {plan.exercises.length === 0 ? (
         <Text style={styles.emptyText}>No exercises in this plan.</Text>
       ) : (
-        plan.exercises.map((exercise) => (
-          <Pressable
-            key={exercise.id}
-            style={styles.exerciseRow}
-            onPress={() =>
-              navigation.navigate('ExerciseProgress', {
-                exerciseId: exercise.id,
-                exerciseName: exercise.name || 'Untitled',
-              })
-            }
+        groupByLinkedToNext(plan.exercises).map((group) => (
+          <View
+            key={group[0].id}
+            style={group.length > 1 ? styles.supersetGroup : undefined}
           >
-            <Text style={styles.exerciseName}>{exercise.name || 'Untitled'}</Text>
-            <Text style={styles.exerciseMeta}>
-              {exercise.sets} sets x {exercise.reps} reps · {exercise.restSeconds ?? 90}s rest
-            </Text>
-          </Pressable>
+            {group.length > 1 && (
+              <Text style={styles.supersetLabel}>
+                {group.length > 2 ? '🔗 Circuit' : '🔗 Superset'} ·{' '}
+                {group.length} exercises
+              </Text>
+            )}
+            {group.map((exercise) => (
+              <Pressable
+                key={exercise.id}
+                style={styles.exerciseRow}
+                onPress={() =>
+                  navigation.navigate('ExerciseProgress', {
+                    exerciseId: exercise.id,
+                    exerciseName: exercise.name || 'Untitled',
+                  })
+                }
+              >
+                <Text style={styles.exerciseName}>{exercise.name || 'Untitled'}</Text>
+                <Text style={styles.exerciseMeta}>
+                  {exercise.sets} sets x {exercise.reps} reps · {exercise.restSeconds ?? 90}s rest
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         ))
       )}
 
@@ -155,6 +168,20 @@ const createStyles = (colors: ColorTokens) =>
     content: { padding: 16, paddingBottom: 32 },
     title: { fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: 16 },
     emptyText: { color: colors.textMuted },
+    supersetGroup: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      padding: 8,
+      marginBottom: 8,
+    },
+    supersetLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+      marginBottom: 6,
+      marginLeft: 2,
+    },
     exerciseRow: {
       padding: 12,
       borderRadius: 8,

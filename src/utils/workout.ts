@@ -69,6 +69,7 @@ export const createLoggedExercise = (
   restSeconds: number = DEFAULT_REST_SECONDS,
   exerciseId: string = generateId(),
   prefillSets: SetPrefill[] = [],
+  linkedToNext: boolean = false,
 ): LoggedExercise => ({
   id: generateId(),
   exerciseId,
@@ -76,6 +77,7 @@ export const createLoggedExercise = (
   targetSets,
   targetReps,
   restSeconds,
+  linkedToNext,
   sets: Array.from({ length: targetSets }, (_, index) => ({
     id: generateId(),
     targetReps,
@@ -125,6 +127,7 @@ export const createWorkoutFromPlan = (
         exercise.restSeconds ?? DEFAULT_REST_SECONDS,
         exercise.id,
         prefillSets,
+        exercise.linkedToNext ?? false,
       );
     }),
   };
@@ -143,6 +146,22 @@ export const estimateOneRepMax = (weight: number, reps: number): number => {
   if (weight <= 0 || reps <= 0) return 0;
   if (reps === 1) return weight;
   return Math.round(weight * (1 + reps / 30) * 10) / 10;
+};
+
+export const groupByLinkedToNext = <T extends { linkedToNext?: boolean }>(
+  items: T[],
+): T[][] => {
+  const groups: T[][] = [];
+  let current: T[] = [];
+  for (const item of items) {
+    current.push(item);
+    if (!item.linkedToNext) {
+      groups.push(current);
+      current = [];
+    }
+  }
+  if (current.length > 0) groups.push(current);
+  return groups;
 };
 
 export const computeExerciseVolume = (exercise: LoggedExercise): number => {
