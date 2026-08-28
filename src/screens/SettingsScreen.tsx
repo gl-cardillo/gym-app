@@ -43,7 +43,7 @@ const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: "system", label: "System" },
 ];
 
-const SettingsScreen = (_props: Props) => {
+const SettingsScreen = ({ navigation }: Props) => {
   const { colors, mode, setMode } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -130,6 +130,15 @@ const SettingsScreen = (_props: Props) => {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
     <ScrollView contentContainerStyle={styles.content}>
+      <Text style={styles.sectionTitle}>Exercises</Text>
+      <Pressable
+        style={styles.navRow}
+        onPress={() => navigation.navigate("ExerciseLibrary")}
+      >
+        <Text style={styles.navRowText}>Manage Exercise Library</Text>
+        <Text style={styles.navRowChevron}>›</Text>
+      </Pressable>
+
       <Text style={styles.sectionTitle}>Units</Text>
       <View style={styles.segmentedRow}>
         {(["lbs", "kg"] as WeightUnit[]).map((option) => (
@@ -272,6 +281,16 @@ const createStyles = (colors: ColorTokens) =>
       marginTop: 24,
       marginBottom: 10,
     },
+    navRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      padding: 16,
+    },
+    navRowText: { fontSize: 16, fontWeight: "600", color: colors.text },
+    navRowChevron: { fontSize: 20, color: colors.textMuted },
     segmentedRow: { flexDirection: "row", gap: 8 },
     segment: {
       flex: 1,

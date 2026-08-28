@@ -286,6 +286,24 @@ export const deleteWorkout = async (id: string): Promise<void> => {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 };
 
+export const remapWorkoutExerciseId = async (
+  fromId: string,
+  toId: string,
+  toName: string,
+): Promise<void> => {
+  const workouts = await getWorkouts();
+  let changed = false;
+  const next = workouts.map((workout) => ({
+    ...workout,
+    exercises: workout.exercises.map((exercise) => {
+      if (exercise.exerciseId !== fromId) return exercise;
+      changed = true;
+      return { ...exercise, exerciseId: toId, name: toName };
+    }),
+  }));
+  if (changed) await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+};
+
 export const convertStoredWeights = async (
   from: WeightUnit,
   to: WeightUnit,

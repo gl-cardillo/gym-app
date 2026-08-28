@@ -18,6 +18,7 @@ import WorkoutSessionScreen from "../screens/WorkoutSessionScreen";
 import ExerciseProgressScreen from "../screens/ExerciseProgressScreen";
 import BodyweightScreen from "../screens/BodyweightScreen";
 import MeasurementsScreen from "../screens/MeasurementsScreen";
+import ExerciseLibraryScreen from "../screens/ExerciseLibraryScreen";
 import HistoryScreen from "../screens/HistoryScreen";
 import RecordsScreen from "../screens/RecordsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
@@ -39,6 +40,7 @@ export type RootStackParamList = {
   ExerciseProgress: { exerciseId: string; exerciseName: string };
   Bodyweight: undefined;
   Measurements: undefined;
+  ExerciseLibrary: undefined;
 };
 
 export type TabScreenProps<T extends keyof TabParamList> = CompositeScreenProps<
@@ -171,6 +173,11 @@ const RootNavigator = () => {
           name="Measurements"
           component={MeasurementsScreen}
           options={{ title: "Measurements" }}
+        />
+        <Stack.Screen
+          name="ExerciseLibrary"
+          component={ExerciseLibraryScreen}
+          options={{ title: "Exercise Library" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
