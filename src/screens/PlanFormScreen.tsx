@@ -10,9 +10,15 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { getPlans, savePlan } from "../storage/plans";
-import type { Exercise, Plan } from "../types";
+import type { Exercise, Plan, TrackingMode } from "../types";
+import { DEFAULT_TRACKING_MODE } from "../types";
 import { generateId } from "../utils/id";
-import { DEFAULT_REST_SECONDS, exerciseIdForName } from "../utils/workout";
+import {
+  DEFAULT_REST_SECONDS,
+  exerciseIdForName,
+  formatDuration,
+  resolveTrackingMode,
+} from "../utils/workout";
 import ExerciseNameField from "../components/ExerciseNameField";
 import {
   getExerciseLibrary,
@@ -20,6 +26,7 @@ import {
   LibraryExercise,
   MuscleGroup,
 } from "../storage/exerciseLibrary";
+import { getDistanceUnit, DistanceUnit } from "../storage/settings";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 
@@ -32,12 +39,14 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
   const [name, setName] = useState("");
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [library, setLibrary] = useState<LibraryExercise[]>([]);
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>("mi");
   const [muscleGroups, setMuscleGroups] = useState<
     Record<string, MuscleGroup | null>
   >({});
 
   useEffect(() => {
     getExerciseLibrary().then(setLibrary);
+    getDistanceUnit().then(setDistanceUnit);
   }, []);
 
   useEffect(() => {
@@ -50,6 +59,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
           existing.exercises.map((e) => ({
             ...e,
             restSeconds: e.restSeconds ?? DEFAULT_REST_SECONDS,
+            trackingMode: resolveTrackingMode(e.trackingMode),
           })),
         );
       }
@@ -65,6 +75,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
         sets: 3,
         reps: 10,
         restSeconds: DEFAULT_REST_SECONDS,
+        trackingMode: DEFAULT_TRACKING_MODE,
       },
     ]);
   };
@@ -121,7 +132,13 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
     await Promise.all(
       exercises
         .filter((e) => e.name.trim())
-        .map((e) => upsertLibraryExercise(e.name, muscleGroups[e.id] ?? null)),
+        .map((e) =>
+          upsertLibraryExercise(
+            e.name,
+            muscleGroups[e.id] ?? null,
+            resolveTrackingMode(e.trackingMode),
+          ),
+        ),
     );
     navigation.goBack();
   };
@@ -138,7 +155,9 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
       />
 
       <Text style={styles.label}>Exercises</Text>
-      {exercises.map((exercise, index) => (
+      {exercises.map((exercise, index) => {
+        const mode = resolveTrackingMode(exercise.trackingMode);
+        return (
         <View key={exercise.id}>
           <View style={styles.exerciseCard}>
             <View style={styles.exerciseCardHeader}>
@@ -187,6 +206,11 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                       [exercise.id]: group,
                     }))
                   }
+                  trackingMode={mode}
+                  onChangeTrackingMode={(nextMode) =>
+                    updateExercise(exercise.id, { trackingMode: nextMode })
+                  }
+                  showTrackingModePicker={false}
                 />
               </View>
               <Pressable
@@ -196,40 +220,136 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                 <Text style={styles.removeText}>✕</Text>
               </Pressable>
             </View>
-            <View style={styles.exerciseNumbersRow}>
-              <TextInput
-                style={[styles.input, styles.numberInput]}
-                value={String(exercise.sets)}
-                onChangeText={(text) =>
-                  updateExercise(exercise.id, { sets: Number(text) || 0 })
-                }
-                placeholder="Sets"
-                placeholderTextColor={colors.textFaint}
-                keyboardType="number-pad"
-              />
-              <TextInput
-                style={[styles.input, styles.numberInput]}
-                value={String(exercise.reps)}
-                onChangeText={(text) =>
-                  updateExercise(exercise.id, { reps: Number(text) || 0 })
-                }
-                placeholder="Reps"
-                placeholderTextColor={colors.textFaint}
-                keyboardType="number-pad"
-              />
-              <TextInput
-                style={[styles.input, styles.numberInput]}
-                value={String(exercise.restSeconds)}
-                onChangeText={(text) =>
-                  updateExercise(exercise.id, {
-                    restSeconds: Number(text) || 0,
-                  })
-                }
-                placeholder="Rest s"
-                placeholderTextColor={colors.textFaint}
-                keyboardType="number-pad"
-              />
+
+            <View style={styles.modeChips}>
+              {(
+                [
+                  { value: "weighted", label: "Weight" },
+                  { value: "bodyweight", label: "Bodyweight" },
+                  { value: "duration", label: "Time" },
+                  { value: "cardio", label: "Cardio" },
+                ] as { value: TrackingMode; label: string }[]
+              ).map((option) => (
+                <Pressable
+                  key={option.value}
+                  style={[
+                    styles.modeChip,
+                    mode === option.value && styles.modeChipActive,
+                  ]}
+                  onPress={() =>
+                    updateExercise(exercise.id, { trackingMode: option.value })
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.modeChipText,
+                      mode === option.value && styles.modeChipTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
+
+            <View style={styles.exerciseNumbersRow}>
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Sets</Text>
+                <TextInput
+                  style={[styles.input, styles.numberInput]}
+                  value={String(exercise.sets)}
+                  onChangeText={(text) =>
+                    updateExercise(exercise.id, { sets: Number(text) || 0 })
+                  }
+                  placeholder="Sets"
+                  placeholderTextColor={colors.textFaint}
+                  keyboardType="number-pad"
+                />
+              </View>
+
+              {(mode === "weighted" || mode === "bodyweight") && (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Reps</Text>
+                  <TextInput
+                    style={[styles.input, styles.numberInput]}
+                    value={String(exercise.reps)}
+                    onChangeText={(text) =>
+                      updateExercise(exercise.id, { reps: Number(text) || 0 })
+                    }
+                    placeholder="Reps"
+                    placeholderTextColor={colors.textFaint}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              )}
+
+              {(mode === "duration" || mode === "cardio") && (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Target time (s)</Text>
+                  <TextInput
+                    style={[styles.input, styles.numberInput]}
+                    value={
+                      exercise.targetDurationSeconds
+                        ? String(exercise.targetDurationSeconds)
+                        : ""
+                    }
+                    onChangeText={(text) =>
+                      updateExercise(exercise.id, {
+                        targetDurationSeconds: Number(text) || undefined,
+                      })
+                    }
+                    placeholder="sec"
+                    placeholderTextColor={colors.textFaint}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              )}
+
+              {mode === "cardio" && (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Distance ({distanceUnit})</Text>
+                  <TextInput
+                    style={[styles.input, styles.numberInput]}
+                    value={
+                      exercise.targetDistance
+                        ? String(exercise.targetDistance)
+                        : ""
+                    }
+                    onChangeText={(text) =>
+                      updateExercise(exercise.id, {
+                        targetDistance: Number(text) || undefined,
+                      })
+                    }
+                    placeholder={distanceUnit}
+                    placeholderTextColor={colors.textFaint}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+              )}
+
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>Rest (s)</Text>
+                <TextInput
+                  style={[styles.input, styles.numberInput]}
+                  value={String(exercise.restSeconds)}
+                  onChangeText={(text) =>
+                    updateExercise(exercise.id, {
+                      restSeconds: Number(text) || 0,
+                    })
+                  }
+                  placeholder="Rest s"
+                  placeholderTextColor={colors.textFaint}
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
+
+            {(mode === "duration" || mode === "cardio") &&
+              !!exercise.targetDurationSeconds && (
+                <Text style={styles.fieldHint}>
+                  Target: {formatDuration(exercise.targetDurationSeconds)}
+                </Text>
+              )}
           </View>
           {index < exercises.length - 1 && (
             <Pressable
@@ -249,7 +369,8 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
             </Pressable>
           )}
         </View>
-      ))}
+        );
+      })}
 
       <Pressable style={styles.addExerciseButton} onPress={addExercise}>
         <Text style={styles.addExerciseText}>+ Add Exercise</Text>
@@ -299,8 +420,30 @@ const createStyles = (colors: ColorTokens) =>
     reorderText: { fontSize: 14, color: colors.primary, paddingVertical: 2 },
     reorderTextDisabled: { color: colors.borderMuted },
     exerciseNameWrap: { flex: 1 },
-    exerciseNumbersRow: { flexDirection: "row", gap: 8 },
-    numberInput: { flex: 1, textAlign: "center" },
+    modeChips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 10,
+    },
+    modeChip: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+    },
+    modeChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    modeChipText: { fontSize: 12, color: colors.textMuted },
+    modeChipTextActive: { color: colors.onAccent, fontWeight: "600" },
+    exerciseNumbersRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    field: { flexGrow: 1, flexBasis: 70, minWidth: 60 },
+    fieldLabel: { fontSize: 11, color: colors.textFaint, marginBottom: 3 },
+    fieldHint: { fontSize: 12, color: colors.textMuted, marginTop: 8 },
+    numberInput: { textAlign: "center", padding: 10, fontSize: 15 },
     removeText: { fontSize: 18, color: colors.danger, paddingHorizontal: 4 },
     linkToggle: { alignItems: "center", paddingVertical: 6, marginBottom: 10 },
     linkToggleText: {

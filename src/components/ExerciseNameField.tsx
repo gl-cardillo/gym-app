@@ -13,6 +13,7 @@ import {
   MUSCLE_GROUPS,
   MuscleGroup,
 } from "../storage/exerciseLibrary";
+import { DEFAULT_TRACKING_MODE, TRACKING_MODES, TrackingMode } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 
@@ -22,6 +23,9 @@ type Props = {
   library: LibraryExercise[];
   muscleGroup: MuscleGroup | null;
   onChangeMuscleGroup: (group: MuscleGroup | null) => void;
+  trackingMode?: TrackingMode;
+  onChangeTrackingMode?: (mode: TrackingMode) => void;
+  showTrackingModePicker?: boolean;
   placeholder?: string;
   inputStyle?: StyleProp<TextStyle>;
   autoFocus?: boolean;
@@ -35,6 +39,9 @@ const ExerciseNameField = ({
   library,
   muscleGroup,
   onChangeMuscleGroup,
+  trackingMode,
+  onChangeTrackingMode,
+  showTrackingModePicker = true,
   placeholder = "Exercise name",
   inputStyle,
   autoFocus,
@@ -63,6 +70,7 @@ const ExerciseNameField = ({
   const handleSelect = (entry: LibraryExercise) => {
     onChangeText(entry.name);
     onChangeMuscleGroup(entry.muscleGroup);
+    onChangeTrackingMode?.(entry.trackingMode ?? DEFAULT_TRACKING_MODE);
     setIsFocused(false);
   };
 
@@ -99,6 +107,33 @@ const ExerciseNameField = ({
       )}
       {showTagPicker && (
         <View style={styles.tagPicker}>
+          {onChangeTrackingMode && showTrackingModePicker && (
+            <>
+              <Text style={styles.tagPickerLabel}>How is it tracked?</Text>
+              <View style={[styles.tagRow, styles.modeRow]}>
+                {TRACKING_MODES.map((option) => {
+                  const active =
+                    (trackingMode ?? DEFAULT_TRACKING_MODE) === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      style={[styles.tagChip, active && styles.tagChipActive]}
+                      onPress={() => onChangeTrackingMode(option.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.tagChipText,
+                          active && styles.tagChipTextActive,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
           <Text style={styles.tagPickerLabel}>Tag muscle group (optional)</Text>
           <View style={styles.tagRow}>
             {MUSCLE_GROUPS.map((group) => (
@@ -159,8 +194,14 @@ const createStyles = (colors: ColorTokens) =>
     suggestionName: { fontSize: 14, color: colors.text },
     suggestionTag: { fontSize: 11, color: colors.textFaint },
     tagPicker: { marginTop: 6 },
-    tagPickerLabel: { fontSize: 11, color: colors.textFaint, marginBottom: 4 },
+    tagPickerLabel: {
+      fontSize: 11,
+      color: colors.textFaint,
+      marginBottom: 4,
+      marginTop: 6,
+    },
     tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    modeRow: { marginBottom: 2 },
     tagChip: {
       borderWidth: 1,
       borderColor: colors.border,

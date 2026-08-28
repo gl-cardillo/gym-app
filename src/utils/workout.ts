@@ -1,10 +1,37 @@
-import { LoggedExercise, Plan, Workout } from "../types";
+import {
+  DEFAULT_TRACKING_MODE,
+  LoggedExercise,
+  LoggedSet,
+  Plan,
+  TrackingMode,
+  Workout,
+} from "../types";
 import { WeightUnit } from "../storage/settings";
 import { generateId } from "./id";
 
 export const DEFAULT_REST_SECONDS = 90;
 
 const WEIGHT_INCREMENT: Record<WeightUnit, number> = { kg: 2.5, lbs: 5 };
+
+export const isWeightTracked = (mode: TrackingMode | undefined): boolean =>
+  mode === undefined || mode === "weighted" || mode === "bodyweight";
+
+export const resolveTrackingMode = (
+  mode: TrackingMode | undefined,
+): TrackingMode => mode ?? DEFAULT_TRACKING_MODE;
+
+export const formatDuration = (totalSeconds: number): string => {
+  const safe = Math.max(0, Math.round(totalSeconds));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(
+      seconds,
+    ).padStart(2, "0")}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+};
 
 export type OverloadSuggestion = {
   lastWeight: number;
@@ -19,11 +46,15 @@ export const getOverloadSuggestion = (
   targetReps: number,
   unit: WeightUnit,
 ): OverloadSuggestion | null => {
+  if (previousExercise && !isWeightTracked(previousExercise.trackingMode)) {
+    return null;
+  }
   const workingSets = (previousExercise?.sets ?? []).filter(
     (set) =>
       set.completed &&
       !set.isWarmup &&
       set.weight !== null &&
+      set.weight > 0 &&
       set.reps !== null,
   );
   if (workingSets.length === 0) return null;
@@ -59,18 +90,36 @@ export const exerciseIdForName = (name: string): string => {
 type SetPrefill = {
   weight: number | null;
   reps: number | null;
+  durationSeconds: number | null;
+  distance: number | null;
   isWarmup: boolean;
 };
 
-export const createLoggedExercise = (
-  name: string,
-  targetSets: number,
-  targetReps: number,
-  restSeconds: number = DEFAULT_REST_SECONDS,
-  exerciseId: string = generateId(),
-  prefillSets: SetPrefill[] = [],
-  linkedToNext: boolean = false,
-): LoggedExercise => ({
+export type LoggedExerciseInit = {
+  name: string;
+  targetSets: number;
+  targetReps: number;
+  restSeconds?: number;
+  exerciseId?: string;
+  prefillSets?: SetPrefill[];
+  linkedToNext?: boolean;
+  trackingMode?: TrackingMode;
+  targetDurationSeconds?: number;
+  targetDistance?: number;
+};
+
+export const createLoggedExercise = ({
+  name,
+  targetSets,
+  targetReps,
+  restSeconds = DEFAULT_REST_SECONDS,
+  exerciseId = generateId(),
+  prefillSets = [],
+  linkedToNext = false,
+  trackingMode = DEFAULT_TRACKING_MODE,
+  targetDurationSeconds,
+  targetDistance,
+}: LoggedExerciseInit): LoggedExercise => ({
   id: generateId(),
   exerciseId,
   name,
@@ -78,11 +127,16 @@ export const createLoggedExercise = (
   targetReps,
   restSeconds,
   linkedToNext,
+  trackingMode,
+  targetDurationSeconds,
+  targetDistance,
   sets: Array.from({ length: targetSets }, (_, index) => ({
     id: generateId(),
     targetReps,
     weight: prefillSets[index]?.weight ?? null,
     reps: prefillSets[index]?.reps ?? null,
+    durationSeconds: prefillSets[index]?.durationSeconds ?? null,
+    distance: prefillSets[index]?.distance ?? null,
     isWarmup: prefillSets[index]?.isWarmup ?? false,
     completed: false,
     rpe: null,
@@ -109,26 +163,40 @@ export const createWorkoutFromPlan = (
     startedAt: new Date().toISOString(),
     completedAt: null,
     exercises: plan.exercises.map((exercise) => {
+      const trackingMode = exercise.trackingMode ?? DEFAULT_TRACKING_MODE;
       const previous = previousExercisesById.get(exercise.id);
-      const suggestion = getOverloadSuggestion(previous, exercise.reps, unit);
+      const suggestion = isWeightTracked(trackingMode)
+        ? getOverloadSuggestion(previous, exercise.reps, unit)
+        : null;
       const prefillSets: SetPrefill[] = (previous?.sets ?? []).map((set) =>
         set.isWarmup
-          ? { weight: set.weight, reps: set.reps, isWarmup: true }
+          ? {
+              weight: set.weight,
+              reps: set.reps,
+              durationSeconds: set.durationSeconds,
+              distance: set.distance,
+              isWarmup: true,
+            }
           : {
               weight: suggestion ? suggestion.suggestedWeight : set.weight,
               reps: suggestion ? suggestion.targetReps : set.reps,
+              durationSeconds: set.durationSeconds,
+              distance: set.distance,
               isWarmup: false,
             },
       );
-      return createLoggedExercise(
-        exercise.name,
-        exercise.sets,
-        exercise.reps,
-        exercise.restSeconds ?? DEFAULT_REST_SECONDS,
-        exercise.id,
+      return createLoggedExercise({
+        name: exercise.name,
+        targetSets: exercise.sets,
+        targetReps: exercise.reps,
+        restSeconds: exercise.restSeconds ?? DEFAULT_REST_SECONDS,
+        exerciseId: exercise.id,
         prefillSets,
-        exercise.linkedToNext ?? false,
-      );
+        linkedToNext: exercise.linkedToNext ?? false,
+        trackingMode,
+        targetDurationSeconds: exercise.targetDurationSeconds,
+        targetDistance: exercise.targetDistance,
+      });
     }),
   };
 };
@@ -164,18 +232,27 @@ export const groupByLinkedToNext = <T extends { linkedToNext?: boolean }>(
   return groups;
 };
 
+export const computeSetVolume = (
+  set: LoggedSet,
+  mode: TrackingMode = DEFAULT_TRACKING_MODE,
+): number => {
+  if (!set.completed || set.isWarmup) return 0;
+  if (mode === "weighted") {
+    if (set.weight === null || set.reps === null) return 0;
+    return set.weight * set.reps;
+  }
+  if (mode === "bodyweight") {
+    if (set.reps === null || set.weight === null) return 0;
+    return set.weight * set.reps;
+  }
+  return 0;
+};
+
 export const computeExerciseVolume = (exercise: LoggedExercise): number => {
-  return exercise.sets.reduce((sum, set) => {
-    if (
-      !set.completed ||
-      set.isWarmup ||
-      set.weight === null ||
-      set.reps === null
-    ) {
-      return sum;
-    }
-    return sum + set.weight * set.reps;
-  }, 0);
+  return exercise.sets.reduce(
+    (sum, set) => sum + computeSetVolume(set, exercise.trackingMode),
+    0,
+  );
 };
 
 export const computeWorkoutVolume = (workout: Workout): number => {

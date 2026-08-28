@@ -6,8 +6,14 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 import { deletePlan, getPlans } from '../storage/plans';
 import { getWorkoutsForPlan, saveWorkout } from '../storage/workouts';
 import { getWeightUnit } from '../storage/settings';
-import type { Plan, Workout } from '../types';
-import { createWorkoutFromPlan, groupByLinkedToNext } from '../utils/workout';
+import type { Exercise, Plan, Workout } from '../types';
+import {
+  createWorkoutFromPlan,
+  formatDuration,
+  groupByLinkedToNext,
+  resolveTrackingMode,
+} from '../utils/workout';
+import { getDistanceUnit, DistanceUnit } from '../storage/settings';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorTokens } from '../theme/colors';
 
@@ -19,6 +25,7 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
   const { planId } = route.params;
   const [plan, setPlan] = useState<Plan | null>(null);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>('mi');
 
   useFocusEffect(
     useCallback(() => {
@@ -26,6 +33,7 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
         setPlan(plans.find((p) => p.id === planId) ?? null);
       });
       getWorkoutsForPlan(planId).then(setWorkouts);
+      getDistanceUnit().then(setDistanceUnit);
     }, [planId])
   );
 
@@ -91,7 +99,7 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
               >
                 <Text style={styles.exerciseName}>{exercise.name || 'Untitled'}</Text>
                 <Text style={styles.exerciseMeta}>
-                  {exercise.sets} sets x {exercise.reps} reps · {exercise.restSeconds ?? 90}s rest
+                  {formatExerciseMeta(exercise, distanceUnit)}
                 </Text>
               </Pressable>
             ))}
@@ -142,6 +150,31 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
 };
 
 export default PlanDetailScreen;
+
+const formatExerciseMeta = (
+  exercise: Exercise,
+  distanceUnit: DistanceUnit,
+): string => {
+  const mode = resolveTrackingMode(exercise.trackingMode);
+  const rest = `${exercise.restSeconds ?? 90}s rest`;
+  if (mode === 'duration') {
+    const target = exercise.targetDurationSeconds
+      ? ` x ${formatDuration(exercise.targetDurationSeconds)}`
+      : '';
+    return `${exercise.sets} sets${target} · ${rest}`;
+  }
+  if (mode === 'cardio') {
+    const dist = exercise.targetDistance
+      ? ` · ${exercise.targetDistance} ${distanceUnit}`
+      : '';
+    const time = exercise.targetDurationSeconds
+      ? ` · ${formatDuration(exercise.targetDurationSeconds)}`
+      : '';
+    return `${exercise.sets} sets${dist}${time} · ${rest}`;
+  }
+  const label = mode === 'bodyweight' ? 'bodyweight reps' : 'reps';
+  return `${exercise.sets} sets x ${exercise.reps} ${label} · ${rest}`;
+};
 
 const countTotalSets = (workout: Workout): number => {
   return workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);

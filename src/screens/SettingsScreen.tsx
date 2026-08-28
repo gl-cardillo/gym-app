@@ -12,13 +12,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { TabScreenProps } from "../navigation/RootNavigator";
-import { convertStoredWeights } from "../storage/workouts";
+import {
+  convertStoredDistances,
+  convertStoredWeights,
+} from "../storage/workouts";
 import { convertStoredBodyweights } from "../storage/bodyweight";
 import { convertStoredMeasurements } from "../storage/measurements";
+import { convertStoredPlanDistances } from "../storage/plans";
 import {
+  getDistanceUnit,
   getLengthUnit,
   getWeightUnit,
+  DistanceUnit,
   LengthUnit,
+  setDistanceUnit,
   setLengthUnit,
   setWeightUnit,
   WeightUnit,
@@ -42,6 +49,7 @@ const SettingsScreen = (_props: Props) => {
 
   const [unit, setUnit] = useState<WeightUnit>("lbs");
   const [lengthUnit, setLengthUnitState] = useState<LengthUnit>("in");
+  const [distanceUnit, setDistanceUnitState] = useState<DistanceUnit>("mi");
   const [importText, setImportText] = useState("");
   const [isImporting, setIsImporting] = useState(false);
 
@@ -49,6 +57,7 @@ const SettingsScreen = (_props: Props) => {
     useCallback(() => {
       getWeightUnit().then(setUnit);
       getLengthUnit().then(setLengthUnitState);
+      getDistanceUnit().then(setDistanceUnitState);
     }, []),
   );
 
@@ -65,6 +74,14 @@ const SettingsScreen = (_props: Props) => {
     await convertStoredMeasurements(lengthUnit, next);
     setLengthUnitState(next);
     await setLengthUnit(next);
+  };
+
+  const toggleDistanceUnit = async (next: DistanceUnit) => {
+    if (next === distanceUnit) return;
+    await convertStoredDistances(distanceUnit, next);
+    await convertStoredPlanDistances(distanceUnit, next);
+    setDistanceUnitState(next);
+    await setDistanceUnit(next);
   };
 
   const handleExport = async () => {
@@ -148,6 +165,29 @@ const SettingsScreen = (_props: Props) => {
               style={[
                 styles.segmentText,
                 lengthUnit === option && styles.segmentTextActive,
+              ]}
+            >
+              {option}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Text style={styles.sectionTitle}>Distance Units</Text>
+      <View style={styles.segmentedRow}>
+        {(["mi", "km"] as DistanceUnit[]).map((option) => (
+          <Pressable
+            key={option}
+            style={[
+              styles.segment,
+              distanceUnit === option && styles.segmentActive,
+            ]}
+            onPress={() => toggleDistanceUnit(option)}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                distanceUnit === option && styles.segmentTextActive,
               ]}
             >
               {option}

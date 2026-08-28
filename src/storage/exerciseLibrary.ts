@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { exerciseIdForName } from "../utils/workout";
+import type { TrackingMode } from "../types";
 
 const STORAGE_KEY = "gym-app:exercise-library";
 
@@ -28,6 +29,7 @@ export type LibraryExercise = {
   id: string;
   name: string;
   muscleGroup: MuscleGroup | null;
+  trackingMode?: TrackingMode;
 };
 
 export const getExerciseLibrary = async (): Promise<LibraryExercise[]> => {
@@ -48,6 +50,7 @@ const saveLibrary = async (entries: LibraryExercise[]): Promise<void> => {
 export const upsertLibraryExercise = async (
   name: string,
   muscleGroup: MuscleGroup | null = null,
+  trackingMode: TrackingMode | null = null,
 ): Promise<LibraryExercise | null> => {
   const trimmed = name.trim();
   if (!trimmed) return null;
@@ -57,16 +60,35 @@ export const upsertLibraryExercise = async (
   const index = entries.findIndex((e) => e.id === id);
 
   if (index >= 0) {
-    if (muscleGroup && !entries[index].muscleGroup) {
-      const updated = { ...entries[index], muscleGroup };
+    const current = entries[index];
+    const nextMuscleGroup =
+      muscleGroup && !current.muscleGroup ? muscleGroup : current.muscleGroup;
+    const nextTrackingMode =
+      trackingMode && !current.trackingMode
+        ? trackingMode
+        : current.trackingMode;
+    if (
+      nextMuscleGroup !== current.muscleGroup ||
+      nextTrackingMode !== current.trackingMode
+    ) {
+      const updated: LibraryExercise = {
+        ...current,
+        muscleGroup: nextMuscleGroup,
+        trackingMode: nextTrackingMode,
+      };
       entries[index] = updated;
       await saveLibrary(entries);
       return updated;
     }
-    return entries[index];
+    return current;
   }
 
-  const entry: LibraryExercise = { id, name: trimmed, muscleGroup };
+  const entry: LibraryExercise = {
+    id,
+    name: trimmed,
+    muscleGroup,
+    trackingMode: trackingMode ?? undefined,
+  };
   await saveLibrary([...entries, entry]);
   return entry;
 };

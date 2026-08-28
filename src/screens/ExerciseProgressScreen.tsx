@@ -5,7 +5,14 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { getExerciseHistory } from "../storage/workouts";
 import type { ExerciseHistoryEntry } from "../storage/workouts";
-import { getWeightUnit, WeightUnit } from "../storage/settings";
+import {
+  getDistanceUnit,
+  getWeightUnit,
+  DistanceUnit,
+  WeightUnit,
+} from "../storage/settings";
+import { formatDuration, resolveTrackingMode } from "../utils/workout";
+import type { TrackingMode } from "../types";
 import LineChart from "../components/LineChart";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
@@ -14,11 +21,93 @@ type Props = NativeStackScreenProps<RootStackParamList, "ExerciseProgress">;
 
 const CHART_HEIGHT = 180;
 
-type Metric = "topWeight" | "estimatedOneRepMax";
+type MetricConfig = {
+  key: string;
+  label: string;
+  get: (entry: ExerciseHistoryEntry) => number;
+  format: (value: number) => string;
+};
 
-const METRIC_LABELS: Record<Metric, string> = {
-  topWeight: "Top Weight",
-  estimatedOneRepMax: "Est. 1RM",
+const buildMetrics = (
+  mode: TrackingMode,
+  weightUnit: WeightUnit,
+  distanceUnit: DistanceUnit,
+  hasAddedWeight: boolean,
+): MetricConfig[] => {
+  const weight = (v: number) => `${v} ${weightUnit}`;
+  const plain = (v: number) => String(Math.round(v * 100) / 100);
+
+  if (mode === "bodyweight") {
+    const metrics: MetricConfig[] = [
+      { key: "bestReps", label: "Best Reps", get: (e) => e.bestReps, format: plain },
+      {
+        key: "totalReps",
+        label: "Total Reps",
+        get: (e) => e.totalReps,
+        format: plain,
+      },
+    ];
+    if (hasAddedWeight) {
+      metrics.push({
+        key: "topWeight",
+        label: `Added (${weightUnit})`,
+        get: (e) => e.topWeight,
+        format: weight,
+      });
+    }
+    return metrics;
+  }
+
+  if (mode === "duration") {
+    return [
+      {
+        key: "bestDurationSeconds",
+        label: "Best Time",
+        get: (e) => e.bestDurationSeconds,
+        format: formatDuration,
+      },
+      {
+        key: "totalDurationSeconds",
+        label: "Total Time",
+        get: (e) => e.totalDurationSeconds,
+        format: formatDuration,
+      },
+    ];
+  }
+
+  if (mode === "cardio") {
+    return [
+      {
+        key: "bestDistance",
+        label: `Distance (${distanceUnit})`,
+        get: (e) => e.bestDistance,
+        format: plain,
+      },
+      {
+        key: "totalDistance",
+        label: `Total (${distanceUnit})`,
+        get: (e) => e.totalDistance,
+        format: plain,
+      },
+      {
+        key: "totalDurationSeconds",
+        label: "Time",
+        get: (e) => e.totalDurationSeconds,
+        format: formatDuration,
+      },
+    ];
+  }
+
+  return [
+    { key: "topWeight", label: "Top Weight", get: (e) => e.topWeight, format: weight },
+    {
+      key: "estimatedOneRepMax",
+      label: "Est. 1RM",
+      get: (e) => e.estimatedOneRepMax,
+      format: weight,
+    },
+    { key: "volume", label: "Volume", get: (e) => e.volume, format: weight },
+  ];
 };
 
 const ExerciseProgressScreen = ({ route }: Props) => {
@@ -27,68 +116,81 @@ const ExerciseProgressScreen = ({ route }: Props) => {
   const { exerciseId, exerciseName } = route.params;
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
   const [unit, setUnit] = useState<WeightUnit>("lbs");
-  const [metric, setMetric] = useState<Metric>("topWeight");
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>("mi");
+  const [metricKey, setMetricKey] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       getExerciseHistory(exerciseId).then(setHistory);
       getWeightUnit().then(setUnit);
+      getDistanceUnit().then(setDistanceUnit);
     }, [exerciseId]),
   );
 
-  const maxValue = history.reduce(
-    (max, entry) => Math.max(max, entry[metric]),
-    0,
+  const mode = resolveTrackingMode(
+    history[history.length - 1]?.trackingMode,
   );
+  const hasAddedWeight = history.some((entry) => entry.topWeight > 0);
+  const metrics = useMemo(
+    () => buildMetrics(mode, unit, distanceUnit, hasAddedWeight),
+    [mode, unit, distanceUnit, hasAddedWeight],
+  );
+  const metric =
+    metrics.find((m) => m.key === metricKey) ?? metrics[0] ?? null;
+
+  const maxValue = metric
+    ? history.reduce((max, entry) => Math.max(max, metric.get(entry)), 0)
+    : 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{exerciseName}</Text>
 
-      {history.length === 0 ? (
+      {history.length === 0 || !metric ? (
         <Text style={styles.emptyText}>
-          No completed sets with a logged weight yet. Log some workouts to see a
-          trend here.
+          No completed sets logged yet. Log some workouts to see a trend here.
         </Text>
       ) : (
         <>
           <View style={styles.metricTabs}>
-            {(Object.keys(METRIC_LABELS) as Metric[]).map((key) => (
+            {metrics.map((m) => (
               <Pressable
-                key={key}
-                style={[styles.metricTab, metric === key && styles.metricTabActive]}
-                onPress={() => setMetric(key)}
+                key={m.key}
+                style={[
+                  styles.metricTab,
+                  metric.key === m.key && styles.metricTabActive,
+                ]}
+                onPress={() => setMetricKey(m.key)}
               >
                 <Text
                   style={[
                     styles.metricTabText,
-                    metric === key && styles.metricTabTextActive,
+                    metric.key === m.key && styles.metricTabTextActive,
                   ]}
                 >
-                  {METRIC_LABELS[key]}
+                  {m.label}
                 </Text>
               </Pressable>
             ))}
           </View>
 
-          <Text style={styles.sectionTitle}>
-            {METRIC_LABELS[metric]} per session
-          </Text>
+          <Text style={styles.sectionTitle}>{metric.label} per session</Text>
           <LineChart
             height={CHART_HEIGHT}
-            unit={unit}
+            formatValue={metric.format}
             points={history.map((entry) => ({
               x: new Date(entry.date).getTime(),
-              y: entry[metric],
+              y: metric.get(entry),
               label: formatShortDate(entry.date),
               fullLabel: `${formatDate(entry.date)} · ${entry.planName}`,
-              isHighlight: maxValue > 0 && entry[metric] === maxValue,
+              isHighlight:
+                maxValue > 0 && metric.get(entry) === maxValue,
             }))}
           />
 
           <Text style={styles.sectionTitle}>History</Text>
           {[...history].reverse().map((entry) => {
-            const value = entry[metric];
+            const value = metric.get(entry);
             const isPR = maxValue > 0 && value === maxValue;
             return (
               <View
@@ -100,13 +202,15 @@ const ExerciseProgressScreen = ({ route }: Props) => {
                     {formatDate(entry.date)}
                   </Text>
                   <Text style={styles.historyPlan}>{entry.planName}</Text>
-                  <Text style={styles.historyVolume}>
-                    {entry.volume.toLocaleString()} {unit} volume
-                  </Text>
+                  {entry.volume > 0 && (
+                    <Text style={styles.historyVolume}>
+                      {entry.volume.toLocaleString()} {unit} volume
+                    </Text>
+                  )}
                 </View>
                 <Text style={styles.historyWeight}>
                   {isPR ? "★ " : ""}
-                  {value} {unit}
+                  {metric.format(value)}
                 </Text>
               </View>
             );
@@ -140,12 +244,14 @@ const createStyles = (colors: ColorTokens) =>
     content: { padding: 16, paddingBottom: 32 },
     title: { fontSize: 24, fontWeight: "700", color: colors.text, marginBottom: 16 },
     emptyText: { color: colors.textMuted },
-    metricTabs: { flexDirection: "row", gap: 8 },
+    metricTabs: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     metricTab: {
-      flex: 1,
+      flexGrow: 1,
+      flexBasis: 90,
       backgroundColor: colors.surface,
       borderRadius: 8,
       paddingVertical: 10,
+      paddingHorizontal: 6,
       alignItems: "center",
     },
     metricTabActive: { backgroundColor: colors.primary },

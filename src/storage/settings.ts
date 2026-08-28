@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const STORAGE_KEY = "gym-app:settings:weightUnit";
 const THEME_STORAGE_KEY = "gym-app:settings:themeMode";
 const LENGTH_UNIT_STORAGE_KEY = "gym-app:settings:lengthUnit";
+const DISTANCE_UNIT_STORAGE_KEY = "gym-app:settings:distanceUnit";
 
 export type WeightUnit = "lbs" | "kg";
 
@@ -43,4 +44,17 @@ export const getLengthUnit = async (): Promise<LengthUnit> => {
 
 export const setLengthUnit = async (unit: LengthUnit): Promise<void> => {
   await AsyncStorage.setItem(LENGTH_UNIT_STORAGE_KEY, unit);
+};
+
+export type DistanceUnit = "mi" | "km";
+
+export const DEFAULT_DISTANCE_UNIT: DistanceUnit = "mi";
+
+export const getDistanceUnit = async (): Promise<DistanceUnit> => {
+  const raw = await AsyncStorage.getItem(DISTANCE_UNIT_STORAGE_KEY);
+  return raw === "km" ? "km" : DEFAULT_DISTANCE_UNIT;
+};
+
+export const setDistanceUnit = async (unit: DistanceUnit): Promise<void> => {
+  await AsyncStorage.setItem(DISTANCE_UNIT_STORAGE_KEY, unit);
 };
