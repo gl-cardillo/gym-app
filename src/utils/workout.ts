@@ -78,6 +78,36 @@ export const getOverloadSuggestion = (
   };
 };
 
+export const roundToIncrement = (weight: number, unit: WeightUnit): number => {
+  const increment = WEIGHT_INCREMENT[unit];
+  return Math.round(weight / increment) * increment;
+};
+
+const WARMUP_SCHEME: { fraction: number; reps: number }[] = [
+  { fraction: 0, reps: 10 },
+  { fraction: 0.55, reps: 5 },
+  { fraction: 0.7, reps: 3 },
+  { fraction: 0.85, reps: 2 },
+];
+
+export const generateWarmupSets = (
+  workingWeight: number,
+  barWeight: number,
+  unit: WeightUnit,
+): { weight: number; reps: number }[] => {
+  if (workingWeight <= barWeight) return [];
+  const sets: { weight: number; reps: number }[] = [];
+  let lastWeight = -1;
+  for (const step of WARMUP_SCHEME) {
+    const raw = step.fraction === 0 ? barWeight : workingWeight * step.fraction;
+    const weight = Math.max(barWeight, roundToIncrement(raw, unit));
+    if (weight >= workingWeight || weight === lastWeight) continue;
+    sets.push({ weight, reps: step.reps });
+    lastWeight = weight;
+  }
+  return sets;
+};
+
 export const exerciseIdForName = (name: string): string => {
   const slug = name
     .trim()

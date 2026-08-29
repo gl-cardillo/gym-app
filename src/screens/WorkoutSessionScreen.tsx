@@ -20,6 +20,7 @@ import {
   saveWorkout,
 } from "../storage/workouts";
 import {
+  getBarWeight,
   getDistanceUnit,
   getWeightUnit,
   DistanceUnit,
@@ -37,6 +38,7 @@ import {
   estimateOneRepMax,
   exerciseIdForName,
   formatDuration,
+  generateWarmupSets,
   getOverloadSuggestion,
   groupByLinkedToNext,
   resolveTrackingMode,
@@ -45,6 +47,7 @@ import { generateId } from "../utils/id";
 import { DEFAULT_TRACKING_MODE } from "../types";
 import type { LoggedSet, TrackingMode, Workout } from "../types";
 import ExerciseNameField from "../components/ExerciseNameField";
+import PlateCalculatorModal from "../components/PlateCalculatorModal";
 import {
   getExerciseLibrary,
   upsertLibraryExercise,
@@ -67,10 +70,13 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [now, setNow] = useState(() => Date.now());
   const [unit, setUnit] = useState<WeightUnit>("lbs");
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>("mi");
+  const [barWeight, setBarWeightState] = useState<number>(45);
+  const [plateTarget, setPlateTarget] = useState<number | null>(null);
   const [isAddingExercise, setIsAddingExercise] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
-  const [newExerciseMode, setNewExerciseMode] =
-    useState<TrackingMode>(DEFAULT_TRACKING_MODE);
+  const [newExerciseMode, setNewExerciseMode] = useState<TrackingMode>(
+    DEFAULT_TRACKING_MODE,
+  );
   const [newExerciseSets, setNewExerciseSets] = useState("3");
   const [newExerciseReps, setNewExerciseReps] = useState("10");
   const [newExerciseDuration, setNewExerciseDuration] = useState("");
@@ -91,7 +97,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         const current = workouts.find((w) => w.id === workoutId) ?? null;
         setWorkout(current);
         const previous = current
-          ? workouts
+          ? (workouts
               .filter(
                 (w) =>
                   w.id !== current.id &&
@@ -99,8 +105,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   w.completedAt,
               )
               .sort((a, b) =>
-                (b.completedAt as string).localeCompare(a.completedAt as string),
-              )[0] ?? null
+                (b.completedAt as string).localeCompare(
+                  a.completedAt as string,
+                ),
+              )[0] ?? null)
           : null;
         setPreviousWorkout(previous);
       });
@@ -128,6 +136,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   useEffect(() => {
     Notifications.requestPermissionsAsync();
   }, []);
+
+  useEffect(() => {
+    getBarWeight(unit).then(setBarWeightState);
+  }, [unit]);
 
   const cancelRestNotification = async () => {
     if (restNotificationIdRef.current) {
@@ -262,6 +274,87 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
           : exercise,
       ),
     });
+  };
+
+  const addWarmupSets = (exerciseId: string) => {
+    if (!workout) return;
+    const exercise = workout.exercises.find((e) => e.id === exerciseId);
+    if (!exercise) return;
+
+    const loggedMax = exercise.sets
+      .filter((s) => !s.isWarmup && s.weight !== null && s.weight > 0)
+      .reduce((max, s) => Math.max(max, s.weight as number), 0);
+    const suggestion = getOverloadSuggestion(
+      previousWorkout?.exercises.find(
+        (e) => e.exerciseId === exercise.exerciseId,
+      ),
+      exercise.targetReps,
+      unit,
+    );
+    const workingWeight =
+      loggedMax > 0 ? loggedMax : (suggestion?.suggestedWeight ?? 0);
+
+    if (workingWeight <= 0) {
+      Alert.alert(
+        "Add a working weight first",
+        "Enter the weight for one of your working sets, then generate warm-ups from it.",
+      );
+      return;
+    }
+
+    const warmups = generateWarmupSets(workingWeight, barWeight, unit);
+    if (warmups.length === 0) {
+      Alert.alert(
+        "No warm-up needed",
+        `${workingWeight} ${unit} is light enough to start without warm-up sets.`,
+      );
+      return;
+    }
+
+    const newWarmupSets: LoggedSet[] = warmups.map((w) => ({
+      id: generateId(),
+      targetReps: w.reps,
+      weight: w.weight,
+      reps: w.reps,
+      durationSeconds: null,
+      distance: null,
+      isWarmup: true,
+      completed: false,
+      rpe: null,
+      note: "",
+    }));
+
+    const applyWarmups = () => {
+      persist({
+        ...workout,
+        exercises: workout.exercises.map((e) =>
+          e.id === exerciseId
+            ? {
+                ...e,
+                sets: [...newWarmupSets, ...e.sets.filter((s) => !s.isWarmup)],
+              }
+            : e,
+        ),
+      });
+    };
+
+    const existingWarmups = exercise.sets.filter((s) => s.isWarmup).length;
+    if (existingWarmups > 0) {
+      Alert.alert(
+        "Replace warm-up sets?",
+        `This swaps the ${existingWarmups} existing warm-up set${
+          existingWarmups > 1 ? "s" : ""
+        } for ${newWarmupSets.length} new one${
+          newWarmupSets.length > 1 ? "s" : ""
+        }.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Replace", onPress: applyWarmups },
+        ],
+      );
+    } else {
+      applyWarmups();
+    }
   };
 
   const deleteSet = (exerciseId: string, setId: string) => {
@@ -453,297 +546,349 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
 
         {groupByLinkedToNext(workout.exercises).map((group) => (
           <View key={group[0].id} style={styles.exerciseBlock}>
-          {group.length > 1 && (
-            <Text style={styles.supersetLabel}>
-              {group.length > 2 ? "🔗 Circuit" : "🔗 Superset"} ·{" "}
-              {group.length} exercises
-            </Text>
-          )}
-          {group.map((exercise, groupIndex) => {
-          const mode = resolveTrackingMode(exercise.trackingMode);
-          const showWeightCol = mode === "weighted" || mode === "bodyweight";
-          const showRepsCol = mode === "weighted" || mode === "bodyweight";
-          const showDurationCol = mode === "duration" || mode === "cardio";
-          const showDistanceCol = mode === "cardio";
-          const showWarmup = mode === "weighted" || mode === "bodyweight";
-          return (
-          <View
-            key={exercise.id}
-            style={groupIndex > 0 ? styles.supersetItemDivider : undefined}
-          >
-            <View style={styles.exerciseHeaderRow}>
-              <Pressable
-                style={styles.exerciseNameButton}
-                onPress={() =>
-                  navigation.navigate("ExerciseProgress", {
-                    exerciseId: exercise.exerciseId,
-                    exerciseName: exercise.name || "Untitled",
-                  })
-                }
-              >
-                <Text style={styles.exerciseName}>
-                  {exercise.name || "Untitled"}
-                </Text>
-              </Pressable>
-              <Pressable
-                style={styles.removeExerciseButton}
-                onPress={() => deleteExercise(exercise.id, exercise.name)}
-              >
-                <Text style={styles.removeExerciseText}>✕</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.exerciseTarget}>
-              Target: {exercise.targetSets}
-              {showRepsCol ? ` x ${exercise.targetReps}` : ""}
-              {showDistanceCol && exercise.targetDistance
-                ? ` · ${exercise.targetDistance} ${distanceUnit}`
-                : ""}
-              {showDurationCol && exercise.targetDurationSeconds
-                ? ` · ${formatDuration(exercise.targetDurationSeconds)}`
-                : ""}
-              {" · "}
-              {exercise.restSeconds ?? DEFAULT_REST_SECONDS}s rest
-            </Text>
-            {(() => {
-              const suggestion = getOverloadSuggestion(
-                previousWorkout?.exercises.find(
-                  (e) => e.exerciseId === exercise.exerciseId,
-                ),
-                exercise.targetReps,
-                unit,
-              );
-              if (!suggestion) return null;
+            {group.length > 1 && (
+              <Text style={styles.supersetLabel}>
+                {group.length > 2 ? "🔗 Circuit" : "🔗 Superset"} ·{" "}
+                {group.length} exercises
+              </Text>
+            )}
+            {group.map((exercise, groupIndex) => {
+              const mode = resolveTrackingMode(exercise.trackingMode);
+              const showWeightCol =
+                mode === "weighted" || mode === "bodyweight";
+              const showRepsCol = mode === "weighted" || mode === "bodyweight";
+              const showDurationCol = mode === "duration" || mode === "cardio";
+              const showDistanceCol = mode === "cardio";
+              const showWarmup = mode === "weighted" || mode === "bodyweight";
               return (
-                <Text style={styles.suggestionText}>
-                  {suggestion.hitTarget
-                    ? `Last: ${suggestion.lastWeight} ${unit} × ${suggestion.lastReps} · try ${suggestion.suggestedWeight} ${unit}`
-                    : `Last: ${suggestion.lastWeight} ${unit} × ${suggestion.lastReps} · aim for ${suggestion.targetReps} reps`}
-                </Text>
-              );
-            })()}
-
-            <View style={styles.setHeaderRow}>
-              <Text style={[styles.setHeaderCell, styles.setCol]}>Set</Text>
-              {showWarmup && (
-                <Text style={[styles.setHeaderCell, styles.warmupCol]}>W</Text>
-              )}
-              {showDistanceCol && (
-                <Text style={[styles.setHeaderCell, styles.weightCol]}>
-                  Distance ({distanceUnit})
-                </Text>
-              )}
-              {showWeightCol && (
-                <Text style={[styles.setHeaderCell, styles.weightCol]}>
-                  {mode === "bodyweight" ? `+${unit}` : `Weight (${unit})`}
-                </Text>
-              )}
-              {showDurationCol && (
-                <Text style={[styles.setHeaderCell, styles.repsCol]}>
-                  Time (s)
-                </Text>
-              )}
-              {showRepsCol && (
-                <Text style={[styles.setHeaderCell, styles.repsCol]}>Reps</Text>
-              )}
-              <Text style={[styles.setHeaderCell, styles.doneCol]}>Done</Text>
-              <Text style={[styles.setHeaderCell, styles.noteCol]} />
-              <Text style={[styles.setHeaderCell, styles.setDeleteCol]} />
-            </View>
-
-            {exercise.sets.map((set, index) => (
-              <View key={set.id}>
-              <View
-                style={[styles.setRow, set.isWarmup && styles.setRowWarmup]}
-              >
-                <Text style={[styles.setCell, styles.setCol]}>{index + 1}</Text>
-                {showWarmup && (
-                  <Pressable
-                    style={styles.warmupCol}
-                    onPress={() =>
-                      updateSet(exercise.id, set.id, {
-                        isWarmup: !set.isWarmup,
-                      })
-                    }
-                    hitSlop={6}
-                  >
-                    <View
-                      style={[
-                        styles.warmupChip,
-                        set.isWarmup && styles.warmupChipActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.warmupChipText,
-                          set.isWarmup && styles.warmupChipTextActive,
-                        ]}
-                      >
-                        W
-                      </Text>
-                    </View>
-                  </Pressable>
-                )}
-                {showDistanceCol && (
-                  <TextInput
-                    style={[styles.input, styles.weightCol]}
-                    value={set.distance === null ? "" : String(set.distance)}
-                    onChangeText={(text) =>
-                      updateSet(exercise.id, set.id, {
-                        distance: text === "" ? null : Number(text) || 0,
-                      })
-                    }
-                    placeholder={distanceUnit}
-                    placeholderTextColor={colors.textFaint}
-                    keyboardType="decimal-pad"
-                  />
-                )}
-                {showWeightCol && (
-                  <TextInput
-                    style={[styles.input, styles.weightCol]}
-                    value={set.weight === null ? "" : String(set.weight)}
-                    onChangeText={(text) =>
-                      updateSet(exercise.id, set.id, {
-                        weight: text === "" ? null : Number(text) || 0,
-                      })
-                    }
-                    placeholder={mode === "bodyweight" ? `+${unit}` : unit}
-                    placeholderTextColor={colors.textFaint}
-                    keyboardType="decimal-pad"
-                  />
-                )}
-                {showDurationCol && (
-                  <TextInput
-                    style={[styles.input, styles.repsCol]}
-                    value={
-                      set.durationSeconds === null
-                        ? ""
-                        : String(set.durationSeconds)
-                    }
-                    onChangeText={(text) =>
-                      updateSet(exercise.id, set.id, {
-                        durationSeconds:
-                          text === "" ? null : Number(text) || 0,
-                      })
-                    }
-                    placeholder={
-                      exercise.targetDurationSeconds
-                        ? String(exercise.targetDurationSeconds)
-                        : "sec"
-                    }
-                    placeholderTextColor={colors.textFaint}
-                    keyboardType="number-pad"
-                  />
-                )}
-                {showRepsCol && (
-                  <TextInput
-                    style={[styles.input, styles.repsCol]}
-                    value={set.reps === null ? "" : String(set.reps)}
-                    onChangeText={(text) =>
-                      updateSet(exercise.id, set.id, {
-                        reps: text === "" ? null : Number(text) || 0,
-                      })
-                    }
-                    placeholder={String(set.targetReps)}
-                    placeholderTextColor={colors.textFaint}
-                    keyboardType="number-pad"
-                  />
-                )}
-                <Pressable
-                  style={styles.doneCol}
-                  onPress={() => toggleSetCompleted(exercise.id, set)}
+                <View
+                  key={exercise.id}
+                  style={
+                    groupIndex > 0 ? styles.supersetItemDivider : undefined
+                  }
                 >
-                  <View
-                    style={[
-                      styles.checkbox,
-                      set.completed && styles.checkboxChecked,
-                    ]}
-                  >
-                    {set.completed && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
-                </Pressable>
-                <Pressable
-                  style={styles.noteCol}
-                  onPress={() => toggleSetExpanded(set.id)}
-                  hitSlop={6}
-                >
-                  <Text
-                    style={[
-                      styles.noteIcon,
-                      (set.rpe !== null || !!set.note) &&
-                        styles.noteIconActive,
-                    ]}
-                  >
-                    📝
-                  </Text>
-                </Pressable>
-                <Pressable
-                  style={styles.setDeleteCol}
-                  onPress={() => deleteSet(exercise.id, set.id)}
-                >
-                  <Text style={styles.setDeleteText}>✕</Text>
-                </Pressable>
-              </View>
-
-              {mode === "weighted" &&
-                !set.isWarmup &&
-                set.weight !== null &&
-                set.weight > 0 &&
-                set.reps !== null &&
-                set.reps > 0 && (
-                  <Text style={styles.oneRepMaxText}>
-                    Est. 1RM: {estimateOneRepMax(set.weight, set.reps)} {unit}
-                  </Text>
-                )}
-
-              {showDurationCol &&
-                set.durationSeconds !== null &&
-                set.durationSeconds > 0 && (
-                  <Text style={styles.oneRepMaxText}>
-                    {formatDuration(set.durationSeconds)}
-                  </Text>
-                )}
-
-              {expandedSetIds.has(set.id) && (
-                <View style={styles.setDetailPanel}>
-                  <View style={styles.rpeRow}>
-                    <Text style={styles.rpeLabel}>RPE</Text>
-                    <TextInput
-                      style={[styles.input, styles.rpeInput]}
-                      value={set.rpe === null ? "" : String(set.rpe)}
-                      onChangeText={(text) =>
-                        updateSet(exercise.id, set.id, {
-                          rpe: text === "" ? null : Number(text) || 0,
+                  <View style={styles.exerciseHeaderRow}>
+                    <Pressable
+                      style={styles.exerciseNameButton}
+                      onPress={() =>
+                        navigation.navigate("ExerciseProgress", {
+                          exerciseId: exercise.exerciseId,
+                          exerciseName: exercise.name || "Untitled",
                         })
                       }
-                      placeholder="1-10"
-                      placeholderTextColor={colors.textFaint}
-                      keyboardType="decimal-pad"
-                    />
+                    >
+                      <Text style={styles.exerciseName}>
+                        {exercise.name || "Untitled"}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.removeExerciseButton}
+                      onPress={() => deleteExercise(exercise.id, exercise.name)}
+                    >
+                      <Text style={styles.removeExerciseText}>✕</Text>
+                    </Pressable>
                   </View>
-                  <TextInput
-                    style={[styles.input, styles.noteInput]}
-                    value={set.note}
-                    onChangeText={(text) =>
-                      updateSet(exercise.id, set.id, { note: text })
-                    }
-                    placeholder="How did it feel? (optional)"
-                    placeholderTextColor={colors.textFaint}
-                    multiline
-                  />
-                </View>
-              )}
-              </View>
-            ))}
+                  <Text style={styles.exerciseTarget}>
+                    Target: {exercise.targetSets}
+                    {showRepsCol ? ` x ${exercise.targetReps}` : ""}
+                    {showDistanceCol && exercise.targetDistance
+                      ? ` · ${exercise.targetDistance} ${distanceUnit}`
+                      : ""}
+                    {showDurationCol && exercise.targetDurationSeconds
+                      ? ` · ${formatDuration(exercise.targetDurationSeconds)}`
+                      : ""}
+                    {" · "}
+                    {exercise.restSeconds ?? DEFAULT_REST_SECONDS}s rest
+                  </Text>
+                  {(() => {
+                    const suggestion = getOverloadSuggestion(
+                      previousWorkout?.exercises.find(
+                        (e) => e.exerciseId === exercise.exerciseId,
+                      ),
+                      exercise.targetReps,
+                      unit,
+                    );
+                    if (!suggestion) return null;
+                    return (
+                      <Text style={styles.suggestionText}>
+                        {suggestion.hitTarget
+                          ? `Last: ${suggestion.lastWeight} ${unit} × ${suggestion.lastReps} · try ${suggestion.suggestedWeight} ${unit}`
+                          : `Last: ${suggestion.lastWeight} ${unit} × ${suggestion.lastReps} · aim for ${suggestion.targetReps} reps`}
+                      </Text>
+                    );
+                  })()}
 
-            <Pressable
-              style={styles.addSetButton}
-              onPress={() => addSet(exercise.id)}
-            >
-              <Text style={styles.addSetButtonText}>+ Add Set</Text>
-            </Pressable>
-          </View>
-          );
-          })}
+                  <View style={styles.setHeaderRow}>
+                    <Text style={[styles.setHeaderCell, styles.setCol]}>
+                      Set
+                    </Text>
+                    {showWarmup && (
+                      <Text style={[styles.setHeaderCell, styles.warmupCol]}>
+                        W
+                      </Text>
+                    )}
+                    {showDistanceCol && (
+                      <Text style={[styles.setHeaderCell, styles.weightCol]}>
+                        Distance ({distanceUnit})
+                      </Text>
+                    )}
+                    {showWeightCol && (
+                      <Text style={[styles.setHeaderCell, styles.weightCol]}>
+                        {mode === "bodyweight"
+                          ? `+${unit}`
+                          : `Weight (${unit})`}
+                      </Text>
+                    )}
+                    {showDurationCol && (
+                      <Text style={[styles.setHeaderCell, styles.repsCol]}>
+                        Time (s)
+                      </Text>
+                    )}
+                    {showRepsCol && (
+                      <Text style={[styles.setHeaderCell, styles.repsCol]}>
+                        Reps
+                      </Text>
+                    )}
+                    <Text style={[styles.setHeaderCell, styles.doneCol]}>
+                      Done
+                    </Text>
+                    <Text style={[styles.setHeaderCell, styles.noteCol]} />
+                    <Text style={[styles.setHeaderCell, styles.setDeleteCol]} />
+                  </View>
+
+                  {exercise.sets.map((set, index) => (
+                    <View key={set.id}>
+                      <View
+                        style={[
+                          styles.setRow,
+                          set.isWarmup && styles.setRowWarmup,
+                        ]}
+                      >
+                        <Text style={[styles.setCell, styles.setCol]}>
+                          {index + 1}
+                        </Text>
+                        {showWarmup && (
+                          <Pressable
+                            style={styles.warmupCol}
+                            onPress={() =>
+                              updateSet(exercise.id, set.id, {
+                                isWarmup: !set.isWarmup,
+                              })
+                            }
+                            hitSlop={6}
+                          >
+                            <View
+                              style={[
+                                styles.warmupChip,
+                                set.isWarmup && styles.warmupChipActive,
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.warmupChipText,
+                                  set.isWarmup && styles.warmupChipTextActive,
+                                ]}
+                              >
+                                W
+                              </Text>
+                            </View>
+                          </Pressable>
+                        )}
+                        {showDistanceCol && (
+                          <TextInput
+                            style={[styles.input, styles.weightCol]}
+                            value={
+                              set.distance === null ? "" : String(set.distance)
+                            }
+                            onChangeText={(text) =>
+                              updateSet(exercise.id, set.id, {
+                                distance:
+                                  text === "" ? null : Number(text) || 0,
+                              })
+                            }
+                            placeholder={distanceUnit}
+                            placeholderTextColor={colors.textFaint}
+                            keyboardType="decimal-pad"
+                          />
+                        )}
+                        {showWeightCol && (
+                          <TextInput
+                            style={[styles.input, styles.weightCol]}
+                            value={
+                              set.weight === null ? "" : String(set.weight)
+                            }
+                            onChangeText={(text) =>
+                              updateSet(exercise.id, set.id, {
+                                weight: text === "" ? null : Number(text) || 0,
+                              })
+                            }
+                            placeholder={
+                              mode === "bodyweight" ? `+${unit}` : unit
+                            }
+                            placeholderTextColor={colors.textFaint}
+                            keyboardType="decimal-pad"
+                          />
+                        )}
+                        {showDurationCol && (
+                          <TextInput
+                            style={[styles.input, styles.repsCol]}
+                            value={
+                              set.durationSeconds === null
+                                ? ""
+                                : String(set.durationSeconds)
+                            }
+                            onChangeText={(text) =>
+                              updateSet(exercise.id, set.id, {
+                                durationSeconds:
+                                  text === "" ? null : Number(text) || 0,
+                              })
+                            }
+                            placeholder={
+                              exercise.targetDurationSeconds
+                                ? String(exercise.targetDurationSeconds)
+                                : "sec"
+                            }
+                            placeholderTextColor={colors.textFaint}
+                            keyboardType="number-pad"
+                          />
+                        )}
+                        {showRepsCol && (
+                          <TextInput
+                            style={[styles.input, styles.repsCol]}
+                            value={set.reps === null ? "" : String(set.reps)}
+                            onChangeText={(text) =>
+                              updateSet(exercise.id, set.id, {
+                                reps: text === "" ? null : Number(text) || 0,
+                              })
+                            }
+                            placeholder={String(set.targetReps)}
+                            placeholderTextColor={colors.textFaint}
+                            keyboardType="number-pad"
+                          />
+                        )}
+                        <Pressable
+                          style={styles.doneCol}
+                          onPress={() => toggleSetCompleted(exercise.id, set)}
+                        >
+                          <View
+                            style={[
+                              styles.checkbox,
+                              set.completed && styles.checkboxChecked,
+                            ]}
+                          >
+                            {set.completed && (
+                              <Text style={styles.checkmark}>✓</Text>
+                            )}
+                          </View>
+                        </Pressable>
+                        <Pressable
+                          style={styles.noteCol}
+                          onPress={() => toggleSetExpanded(set.id)}
+                          hitSlop={6}
+                        >
+                          <Text
+                            style={[
+                              styles.noteIcon,
+                              (set.rpe !== null || !!set.note) &&
+                                styles.noteIconActive,
+                            ]}
+                          >
+                            📝
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          style={styles.setDeleteCol}
+                          onPress={() => deleteSet(exercise.id, set.id)}
+                        >
+                          <Text style={styles.setDeleteText}>✕</Text>
+                        </Pressable>
+                      </View>
+
+                      {mode === "weighted" &&
+                        set.weight !== null &&
+                        set.weight > 0 && (
+                          <View style={styles.setMetaRow}>
+                            {!set.isWarmup &&
+                              set.reps !== null &&
+                              set.reps > 0 && (
+                                <Text style={styles.setMetaText}>
+                                  Est. 1RM:{" "}
+                                  {estimateOneRepMax(set.weight, set.reps)}{" "}
+                                  {unit}
+                                </Text>
+                              )}
+                            <Pressable
+                              onPress={() =>
+                                setPlateTarget(set.weight as number)
+                              }
+                              hitSlop={6}
+                            >
+                              <Text style={styles.plateLink}>🏋️ Plates</Text>
+                            </Pressable>
+                          </View>
+                        )}
+
+                      {showDurationCol &&
+                        set.durationSeconds !== null &&
+                        set.durationSeconds > 0 && (
+                          <Text style={styles.oneRepMaxText}>
+                            {formatDuration(set.durationSeconds)}
+                          </Text>
+                        )}
+
+                      {expandedSetIds.has(set.id) && (
+                        <View style={styles.setDetailPanel}>
+                          <View style={styles.rpeRow}>
+                            <Text style={styles.rpeLabel}>RPE</Text>
+                            <TextInput
+                              style={[styles.input, styles.rpeInput]}
+                              value={set.rpe === null ? "" : String(set.rpe)}
+                              onChangeText={(text) =>
+                                updateSet(exercise.id, set.id, {
+                                  rpe: text === "" ? null : Number(text) || 0,
+                                })
+                              }
+                              placeholder="1-10"
+                              placeholderTextColor={colors.textFaint}
+                              keyboardType="decimal-pad"
+                            />
+                          </View>
+                          <TextInput
+                            style={[styles.input, styles.noteInput]}
+                            value={set.note}
+                            onChangeText={(text) =>
+                              updateSet(exercise.id, set.id, { note: text })
+                            }
+                            placeholder="How did it feel? (optional)"
+                            placeholderTextColor={colors.textFaint}
+                            multiline
+                          />
+                        </View>
+                      )}
+                    </View>
+                  ))}
+
+                  <View style={styles.setActionsRow}>
+                    <Pressable
+                      style={styles.addSetButton}
+                      onPress={() => addSet(exercise.id)}
+                    >
+                      <Text style={styles.addSetButtonText}>+ Add Set</Text>
+                    </Pressable>
+                    {mode === "weighted" && (
+                      <Pressable
+                        style={styles.addSetButton}
+                        onPress={() => addWarmupSets(exercise.id)}
+                      >
+                        <Text style={styles.addSetButtonText}>
+                          + Warm-up sets
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
           </View>
         ))}
 
@@ -923,6 +1068,14 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
           </View>
         </View>
       )}
+
+      <PlateCalculatorModal
+        visible={plateTarget !== null}
+        targetWeight={plateTarget ?? 0}
+        unit={unit}
+        onClose={() => setPlateTarget(null)}
+        onBarWeightChange={setBarWeightState}
+      />
     </View>
   );
 };
@@ -1010,6 +1163,16 @@ const createStyles = (colors: ColorTokens) =>
       marginTop: -6,
       marginBottom: 8,
     },
+    setMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      marginLeft: 60,
+      marginTop: -6,
+      marginBottom: 8,
+    },
+    setMetaText: { fontSize: 11, color: colors.textFaint },
+    plateLink: { fontSize: 11, color: colors.primary, fontWeight: "600" },
     setCell: { fontSize: 14, color: colors.text },
     setCol: { width: 32 },
     warmupCol: { width: 28, alignItems: "center" },
@@ -1057,6 +1220,12 @@ const createStyles = (colors: ColorTokens) =>
     },
     rpeInput: { width: 64 },
     noteInput: { minHeight: 40, textAlignVertical: "top" },
+    setActionsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+      flexWrap: "wrap",
+    },
     addSetButton: { alignSelf: "flex-start", marginTop: 4, padding: 4 },
     addSetButtonText: {
       color: colors.primary,

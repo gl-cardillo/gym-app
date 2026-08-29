@@ -4,6 +4,7 @@ const STORAGE_KEY = "gym-app:settings:weightUnit";
 const THEME_STORAGE_KEY = "gym-app:settings:themeMode";
 const LENGTH_UNIT_STORAGE_KEY = "gym-app:settings:lengthUnit";
 const DISTANCE_UNIT_STORAGE_KEY = "gym-app:settings:distanceUnit";
+const BAR_WEIGHT_STORAGE_KEY = "gym-app:settings:barWeight";
 
 export type WeightUnit = "lbs" | "kg";
 
@@ -57,4 +58,37 @@ export const getDistanceUnit = async (): Promise<DistanceUnit> => {
 
 export const setDistanceUnit = async (unit: DistanceUnit): Promise<void> => {
   await AsyncStorage.setItem(DISTANCE_UNIT_STORAGE_KEY, unit);
+};
+
+export const DEFAULT_BAR_WEIGHT: Record<WeightUnit, number> = {
+  lbs: 45,
+  kg: 20,
+};
+
+export const getBarWeight = async (unit: WeightUnit): Promise<number> => {
+  const raw = await AsyncStorage.getItem(BAR_WEIGHT_STORAGE_KEY);
+  const parsed = raw === null ? NaN : Number(raw);
+  return Number.isFinite(parsed) && parsed >= 0
+    ? parsed
+    : DEFAULT_BAR_WEIGHT[unit];
+};
+
+export const setBarWeight = async (weight: number): Promise<void> => {
+  await AsyncStorage.setItem(BAR_WEIGHT_STORAGE_KEY, String(weight));
+};
+
+export const convertStoredBarWeight = async (
+  from: WeightUnit,
+  to: WeightUnit,
+): Promise<void> => {
+  if (from === to) return;
+  const raw = await AsyncStorage.getItem(BAR_WEIGHT_STORAGE_KEY);
+  if (raw === null) return;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return;
+  const factor = to === "kg" ? 1 / 2.20462 : 2.20462;
+  await AsyncStorage.setItem(
+    BAR_WEIGHT_STORAGE_KEY,
+    String(Math.round(value * factor * 10) / 10),
+  );
 };

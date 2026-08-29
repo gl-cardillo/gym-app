@@ -20,6 +20,7 @@ import { convertStoredBodyweights } from "../storage/bodyweight";
 import { convertStoredMeasurements } from "../storage/measurements";
 import { convertStoredPlanDistances } from "../storage/plans";
 import {
+  convertStoredBarWeight,
   getDistanceUnit,
   getLengthUnit,
   getWeightUnit,
@@ -65,6 +66,7 @@ const SettingsScreen = ({ navigation }: Props) => {
     if (next === unit) return;
     await convertStoredWeights(unit, next);
     await convertStoredBodyweights(unit, next);
+    await convertStoredBarWeight(unit, next);
     setUnit(next);
     await setWeightUnit(next);
   };
