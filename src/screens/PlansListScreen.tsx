@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import type { TabScreenProps } from '../navigation/RootNavigator';
@@ -14,12 +14,18 @@ const PlansListScreen = ({ navigation }: Props) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      getPlans().then(setPlans);
+      getPlans().then((next) => {
+        setPlans(next);
+        setLoaded(true);
+      });
     }, [])
   );
+
+  const isEmpty = loaded && plans.length === 0;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -28,7 +34,43 @@ const PlansListScreen = ({ navigation }: Props) => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No plans yet. Create your first one.</Text>
+          loaded ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyTitle}>No plans yet</Text>
+              <Text style={styles.emptyBody}>
+                Start from a proven program like StrongLifts 5×5, Push/Pull/Legs,
+                or Upper/Lower, then tweak it to taste.
+              </Text>
+              <Pressable
+                style={styles.primaryButton}
+                onPress={() => navigation.navigate('PlanTemplates')}
+              >
+                <Text style={styles.primaryButtonText}>
+                  Browse starter templates
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() => navigation.navigate('PlanForm', {})}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  Or build one from scratch
+                </Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          plans.length > 0 ? (
+            <Pressable
+              style={styles.templateLink}
+              onPress={() => navigation.navigate('PlanTemplates')}
+            >
+              <Text style={styles.templateLinkText}>
+                 Add from a starter template
+              </Text>
+            </Pressable>
+          ) : null
         }
         renderItem={({ item }) => (
           <Pressable
@@ -40,12 +82,14 @@ const PlansListScreen = ({ navigation }: Props) => {
           </Pressable>
         )}
       />
-      <Pressable
-        style={styles.addButton}
-        onPress={() => navigation.navigate('PlanForm', {})}
-      >
-        <Text style={styles.addButtonText}>+ New Plan</Text>
-      </Pressable>
+      {!isEmpty && (
+        <Pressable
+          style={styles.addButton}
+          onPress={() => navigation.navigate('PlanForm', {})}
+        >
+          <Text style={styles.addButtonText}>+ New Plan</Text>
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 };
@@ -56,7 +100,21 @@ const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     container: { flex: 1, padding: 16, backgroundColor: colors.background },
     list: { flexGrow: 1 },
-    emptyText: { textAlign: 'center', marginTop: 32, color: colors.textMuted },
+    emptyWrap: { marginTop: 40, alignItems: 'stretch' },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    emptyBody: {
+      color: colors.textMuted,
+      fontSize: 14,
+      lineHeight: 20,
+      textAlign: 'center',
+      marginTop: 8,
+      marginBottom: 24,
+    },
     planRow: {
       padding: 16,
       borderRadius: 8,
@@ -65,6 +123,17 @@ const createStyles = (colors: ColorTokens) =>
     },
     planName: { fontSize: 18, fontWeight: '600', color: colors.text },
     planMeta: { color: colors.textMuted, marginTop: 4 },
+    templateLink: { paddingVertical: 14, alignItems: 'center' },
+    templateLinkText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      padding: 16,
+      alignItems: 'center',
+    },
+    primaryButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '600' },
+    secondaryButton: { padding: 14, alignItems: 'center', marginTop: 4 },
+    secondaryButtonText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
     addButton: {
       backgroundColor: colors.primary,
       borderRadius: 8,
