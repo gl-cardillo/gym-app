@@ -91,6 +91,12 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const restNotificationIdRef = useRef<string | null>(null);
   const restExerciseNameRef = useRef<string>("");
 
+  useEffect(() => {
+    navigation.setOptions({
+      title: workout?.completedAt ? "Edit Workout" : "Workout",
+    });
+  }, [navigation, workout?.completedAt]);
+
   useFocusEffect(
     useCallback(() => {
       getWorkouts().then((workouts) => {
@@ -538,6 +544,13 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             ? ` · finished ${formatDateTime(workout.completedAt as string)}`
             : " · in progress"}
         </Text>
+        {isCompleted && (
+          <View style={styles.editingBadge}>
+            <Text style={styles.editingBadgeText}>
+              Editing past workout · changes save automatically
+            </Text>
+          </View>
+        )}
         {volume > 0 && (
           <Text style={styles.volumeText}>
             {volume.toLocaleString()} {unit} total volume
@@ -1010,7 +1023,14 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         </View>
 
         <View style={styles.actions}>
-          {!isCompleted && (
+          {isCompleted ? (
+            <Pressable
+              style={styles.finishButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.finishButtonText}>Done</Text>
+            </Pressable>
+          ) : (
             <Pressable style={styles.finishButton} onPress={handleFinish}>
               <Text style={styles.finishButtonText}>Finish Workout</Text>
             </Pressable>
@@ -1105,6 +1125,19 @@ const createStyles = (colors: ColorTokens) =>
     title: { fontSize: 24, fontWeight: "700", color: colors.text },
     subtitle: { color: colors.textMuted, marginTop: 4, marginBottom: 8 },
     volumeText: { color: colors.textMuted, marginBottom: 16, fontSize: 13 },
+    editingBadge: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 10,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      marginBottom: 16,
+    },
+    editingBadgeText: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontWeight: "600",
+    },
     emptyText: { color: colors.textMuted },
     exerciseBlock: {
       marginBottom: 20,
