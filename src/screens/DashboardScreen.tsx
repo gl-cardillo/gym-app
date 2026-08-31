@@ -218,6 +218,13 @@ const DashboardScreen = ({ navigation }: Props) => {
         >
           <Text style={styles.bodyweightButtonText}>Body Measurements</Text>
         </Pressable>
+
+        <Pressable
+          style={styles.bodyweightButton}
+          onPress={() => navigation.navigate("Trends")}
+        >
+          <Text style={styles.bodyweightButtonText}>Training Trends</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );

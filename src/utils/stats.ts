@@ -1,6 +1,6 @@
 import { Workout } from "../types";
 import type { LibraryExercise } from "../storage/exerciseLibrary";
-import { computeExerciseVolume } from "./workout";
+import { computeExerciseVolume, computeWorkoutVolume } from "./workout";
 
 export type DashboardStats = {
   totalWorkouts: number;
@@ -127,4 +127,56 @@ export const computeMuscleGroupVolume = (
   return [...volumeByGroup.entries()]
     .map(([muscleGroup, volume]) => ({ muscleGroup, volume }))
     .sort((a, b) => b.volume - a.volume);
+};
+
+export type WeeklyTrendPoint = {
+  weekStart: number;
+  label: string;
+  volume: number;
+  workingSets: number;
+  reps: number;
+  workouts: number;
+};
+
+export const computeWeeklyTrends = (
+  workouts: Workout[],
+  weeks = 12,
+): WeeklyTrendPoint[] => {
+  const points: WeeklyTrendPoint[] = [];
+  const indexByWeekStart = new Map<number, number>();
+  const thisWeekStart = startOfWeek(new Date());
+
+  for (let i = weeks - 1; i >= 0; i -= 1) {
+    const d = new Date(thisWeekStart);
+    d.setDate(d.getDate() - i * 7);
+    indexByWeekStart.set(d.getTime(), points.length);
+    points.push({
+      weekStart: d.getTime(),
+      label: `${d.getMonth() + 1}/${d.getDate()}`,
+      volume: 0,
+      workingSets: 0,
+      reps: 0,
+      workouts: 0,
+    });
+  }
+
+  for (const workout of workouts) {
+    if (!workout.completedAt) continue;
+    const weekStart = startOfWeek(new Date(workout.completedAt)).getTime();
+    const index = indexByWeekStart.get(weekStart);
+    if (index === undefined) continue;
+
+    const point = points[index];
+    point.workouts += 1;
+    point.volume += computeWorkoutVolume(workout);
+    for (const exercise of workout.exercises) {
+      for (const set of exercise.sets) {
+        if (!set.completed || set.isWarmup) continue;
+        point.workingSets += 1;
+        if (set.reps !== null) point.reps += set.reps;
+      }
+    }
+  }
+
+  return points;
 };

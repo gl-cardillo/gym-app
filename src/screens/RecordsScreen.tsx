@@ -106,6 +106,14 @@ const RecordsScreen = ({ navigation }: Props) => {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
+        <Pressable
+          style={styles.trendsLink}
+          onPress={() => navigation.navigate("Trends")}
+        >
+          <Text style={styles.trendsLinkText}>Volume & training trends</Text>
+          <Text style={styles.trendsLinkChevron}>›</Text>
+        </Pressable>
+
         {records.length === 0 ? (
           <Text style={styles.emptyText}>
             No personal records yet. Log some completed sets to see your bests
@@ -161,6 +169,17 @@ const createStyles = (colors: ColorTokens) =>
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, paddingBottom: 32 },
     emptyText: { color: colors.textMuted },
+    trendsLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      padding: 14,
+      marginBottom: 12,
+    },
+    trendsLinkText: { fontSize: 15, fontWeight: "600", color: colors.text },
+    trendsLinkChevron: { fontSize: 20, color: colors.textMuted },
     card: {
       backgroundColor: colors.surface,
       borderRadius: 8,
