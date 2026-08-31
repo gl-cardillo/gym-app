@@ -132,9 +132,16 @@ const SettingsScreen = ({ navigation }: Props) => {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
     <ScrollView contentContainerStyle={styles.content}>
-      <Text style={styles.sectionTitle}>Exercises</Text>
+      <Text style={styles.sectionTitle}>Training</Text>
       <Pressable
         style={styles.navRow}
+        onPress={() => navigation.navigate("Schedule")}
+      >
+        <Text style={styles.navRowText}>Weekly Schedule</Text>
+        <Text style={styles.navRowChevron}>›</Text>
+      </Pressable>
+      <Pressable
+        style={[styles.navRow, styles.navRowStacked]}
         onPress={() => navigation.navigate("ExerciseLibrary")}
       >
         <Text style={styles.navRowText}>Manage Exercise Library</Text>
@@ -291,6 +298,7 @@ const createStyles = (colors: ColorTokens) =>
       borderRadius: 8,
       padding: 16,
     },
+    navRowStacked: { marginTop: 10 },
     navRowText: { fontSize: 16, fontWeight: "600", color: colors.text },
     navRowChevron: { fontSize: 20, color: colors.textMuted },
     segmentedRow: { flexDirection: "row", gap: 8 },

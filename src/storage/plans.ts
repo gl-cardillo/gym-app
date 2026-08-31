@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Plan, TrackingMode } from '../types';
 import type { DistanceUnit } from './settings';
 import { convertDistance } from '../utils/units';
+import { removePlanFromSchedule } from './schedule';
 
 const STORAGE_KEY = 'gym-app:plans';
 
@@ -25,6 +26,7 @@ export const deletePlan = async (id: string): Promise<void> => {
   const plans = await getPlans();
   const next = plans.filter((p) => p.id !== id);
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await removePlanFromSchedule(id);
 };
 
 export const remapPlanExerciseId = async (

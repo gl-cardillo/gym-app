@@ -15,6 +15,7 @@ import PlansListScreen from "../screens/PlansListScreen";
 import PlanFormScreen from "../screens/PlanFormScreen";
 import PlanDetailScreen from "../screens/PlanDetailScreen";
 import PlanTemplatesScreen from "../screens/PlanTemplatesScreen";
+import ScheduleScreen from "../screens/ScheduleScreen";
 import WorkoutSessionScreen from "../screens/WorkoutSessionScreen";
 import ExerciseProgressScreen from "../screens/ExerciseProgressScreen";
 import BodyweightScreen from "../screens/BodyweightScreen";
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   PlanForm: { planId?: string };
   PlanDetail: { planId: string };
   PlanTemplates: undefined;
+  Schedule: undefined;
   WorkoutSession: { workoutId: string };
   ExerciseProgress: { exerciseId: string; exerciseName: string };
   Bodyweight: undefined;
@@ -160,6 +162,11 @@ const RootNavigator = () => {
           name="PlanTemplates"
           component={PlanTemplatesScreen}
           options={{ title: "Starter Templates" }}
+        />
+        <Stack.Screen
+          name="Schedule"
+          component={ScheduleScreen}
+          options={{ title: "Weekly Schedule" }}
         />
         <Stack.Screen
           name="WorkoutSession"
