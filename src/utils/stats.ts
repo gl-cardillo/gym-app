@@ -129,6 +129,117 @@ export const computeMuscleGroupVolume = (
     .sort((a, b) => b.volume - a.volume);
 };
 
+export type MuscleGroupRecovery = {
+  muscleGroup: string;
+  lastTrainedAt: string | null;
+  daysSince: number | null;
+  setsThisWeek: number;
+  setsLastWeek: number;
+  sessionsThisWeek: number;
+  sessionsLastWeek: number;
+};
+
+export const WEEKLY_SESSION_TARGET = 2;
+
+const CORE_MUSCLE_GROUPS = [
+  "Chest",
+  "Back",
+  "Shoulders",
+  "Arms",
+  "Legs",
+  "Core",
+];
+
+export const computeMuscleGroupRecovery = (
+  workouts: Workout[],
+  library: LibraryExercise[],
+  now: Date = new Date(),
+): MuscleGroupRecovery[] => {
+  const groupById = new Map(
+    library.map((entry) => [entry.id, entry.muscleGroup ?? "Other"]),
+  );
+  const thisWeekStart = startOfWeek(now).getTime();
+  const lastWeekStart = thisWeekStart - 7 * 86_400_000;
+
+  type Acc = {
+    lastTrainedAt: string | null;
+    setsThisWeek: number;
+    setsLastWeek: number;
+    sessionsThisWeek: Set<string>;
+    sessionsLastWeek: Set<string>;
+  };
+  const acc = new Map<string, Acc>();
+  const ensure = (group: string): Acc => {
+    let entry = acc.get(group);
+    if (!entry) {
+      entry = {
+        lastTrainedAt: null,
+        setsThisWeek: 0,
+        setsLastWeek: 0,
+        sessionsThisWeek: new Set(),
+        sessionsLastWeek: new Set(),
+      };
+      acc.set(group, entry);
+    }
+    return entry;
+  };
+
+  for (const workout of workouts) {
+    if (!workout.completedAt) continue;
+    const weekStart = startOfWeek(new Date(workout.completedAt)).getTime();
+    for (const exercise of workout.exercises) {
+      const workingSets = exercise.sets.filter(
+        (set) => set.completed && !set.isWarmup,
+      ).length;
+      if (workingSets === 0) continue;
+      const group = groupById.get(exercise.exerciseId) ?? "Other";
+      const entry = ensure(group);
+      if (!entry.lastTrainedAt || workout.completedAt > entry.lastTrainedAt) {
+        entry.lastTrainedAt = workout.completedAt;
+      }
+      if (weekStart === thisWeekStart) {
+        entry.setsThisWeek += workingSets;
+        entry.sessionsThisWeek.add(workout.id);
+      } else if (weekStart === lastWeekStart) {
+        entry.setsLastWeek += workingSets;
+        entry.sessionsLastWeek.add(workout.id);
+      }
+    }
+  }
+
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const groups = new Set<string>([...CORE_MUSCLE_GROUPS, ...acc.keys()]);
+
+  return [...groups]
+    .map((muscleGroup) => {
+      const entry = acc.get(muscleGroup);
+      const lastTrainedAt = entry?.lastTrainedAt ?? null;
+      let daysSince: number | null = null;
+      if (lastTrainedAt) {
+        const trainedDay = new Date(lastTrainedAt);
+        trainedDay.setHours(0, 0, 0, 0);
+        daysSince = Math.round(
+          (startOfToday.getTime() - trainedDay.getTime()) / 86_400_000,
+        );
+      }
+      return {
+        muscleGroup,
+        lastTrainedAt,
+        daysSince,
+        setsThisWeek: entry?.setsThisWeek ?? 0,
+        setsLastWeek: entry?.setsLastWeek ?? 0,
+        sessionsThisWeek: entry?.sessionsThisWeek.size ?? 0,
+        sessionsLastWeek: entry?.sessionsLastWeek.size ?? 0,
+      };
+    })
+    .sort((a, b) => {
+      const rank = (r: MuscleGroupRecovery) =>
+        r.daysSince === null ? Number.POSITIVE_INFINITY : r.daysSince;
+      return rank(b) - rank(a);
+    });
+};
+
 export type WeeklyTrendPoint = {
   weekStart: number;
   label: string;

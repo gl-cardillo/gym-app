@@ -225,6 +225,13 @@ const DashboardScreen = ({ navigation }: Props) => {
         >
           <Text style={styles.bodyweightButtonText}>Training Trends</Text>
         </Pressable>
+
+        <Pressable
+          style={styles.bodyweightButton}
+          onPress={() => navigation.navigate("MuscleRecovery")}
+        >
+          <Text style={styles.bodyweightButtonText}>Muscle Recovery</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );

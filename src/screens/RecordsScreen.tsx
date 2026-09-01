@@ -114,6 +114,14 @@ const RecordsScreen = ({ navigation }: Props) => {
           <Text style={styles.trendsLinkChevron}>›</Text>
         </Pressable>
 
+        <Pressable
+          style={styles.trendsLink}
+          onPress={() => navigation.navigate("MuscleRecovery")}
+        >
+          <Text style={styles.trendsLinkText}>Muscle recovery & frequency</Text>
+          <Text style={styles.trendsLinkChevron}>›</Text>
+        </Pressable>
+
         {records.length === 0 ? (
           <Text style={styles.emptyText}>
             No personal records yet. Log some completed sets to see your bests

@@ -19,6 +19,7 @@ import ScheduleScreen from "../screens/ScheduleScreen";
 import WorkoutSessionScreen from "../screens/WorkoutSessionScreen";
 import ExerciseProgressScreen from "../screens/ExerciseProgressScreen";
 import TrendsScreen from "../screens/TrendsScreen";
+import MuscleRecoveryScreen from "../screens/MuscleRecoveryScreen";
 import BodyweightScreen from "../screens/BodyweightScreen";
 import MeasurementsScreen from "../screens/MeasurementsScreen";
 import ExerciseLibraryScreen from "../screens/ExerciseLibraryScreen";
@@ -44,6 +45,7 @@ export type RootStackParamList = {
   WorkoutSession: { workoutId: string };
   ExerciseProgress: { exerciseId: string; exerciseName: string };
   Trends: undefined;
+  MuscleRecovery: undefined;
   Bodyweight: undefined;
   Measurements: undefined;
   ExerciseLibrary: undefined;
@@ -184,6 +186,11 @@ const RootNavigator = () => {
           name="Trends"
           component={TrendsScreen}
           options={{ title: "Training Trends" }}
+        />
+        <Stack.Screen
+          name="MuscleRecovery"
+          component={MuscleRecoveryScreen}
+          options={{ title: "Muscle Recovery" }}
         />
         <Stack.Screen
           name="Bodyweight"
