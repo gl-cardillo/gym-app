@@ -4,6 +4,7 @@ import type { Workout } from "../types";
 import { computeDashboardStats, startOfWeek } from "../utils/stats";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 const WEEKS_TO_SHOW = 16;
 const CELL_SIZE = 14;
@@ -93,23 +94,31 @@ const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     container: {
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 12,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 16,
       marginBottom: 16,
+      ...shadow.soft,
     },
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: 10,
+      marginBottom: 12,
     },
-    title: { fontSize: 14, fontWeight: "600", color: colors.text },
-    streakText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+    title: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    streakText: { fontSize: 13, fontWeight: "700", color: colors.warning },
     grid: { flexDirection: "row", gap: CELL_GAP },
     weekColumn: { gap: CELL_GAP },
     cell: {
       width: CELL_SIZE,
       height: CELL_SIZE,
-      borderRadius: 3,
+      borderRadius: 4,
     },
   });

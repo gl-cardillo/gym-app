@@ -17,6 +17,7 @@ import { computeWorkoutVolume } from "../utils/workout";
 import type { Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 import WorkoutHeatmap from "../components/WorkoutHeatmap";
 
 type Props = TabScreenProps<"History">;
@@ -310,26 +311,28 @@ const formatDate = (iso: string): string => {
 const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: 16, paddingBottom: 32 },
-    emptyText: { color: colors.textMuted },
+    content: { padding: 16, paddingBottom: 40 },
+    emptyText: { color: colors.textMuted, fontSize: 14 },
     filters: { marginBottom: 12 },
     searchInput: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
-      padding: 10,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      padding: 12,
       fontSize: 14,
       color: colors.text,
       backgroundColor: colors.inputBackground,
-      marginBottom: 8,
+      marginBottom: 10,
     },
     chipRow: { gap: 8, paddingBottom: 8 },
     chip: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 14,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surface,
+      paddingVertical: 7,
+      paddingHorizontal: 14,
     },
     chipActive: {
       backgroundColor: colors.primary,
@@ -353,22 +356,24 @@ const createStyles = (colors: ColorTokens) =>
     workoutRow: {
       flexDirection: "row",
       alignItems: "center",
-      borderRadius: 8,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
       backgroundColor: colors.surface,
-      marginBottom: 8,
+      marginBottom: 10,
+      ...shadow.soft,
     },
-    workoutRowMain: { flex: 1, padding: 12 },
+    workoutRowMain: { flex: 1, padding: 16 },
     workoutRowHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
     },
-    workoutPlan: { fontSize: 16, fontWeight: "600", color: colors.text },
+    workoutPlan: { fontSize: 16, fontWeight: "700", color: colors.text },
     inProgressChip: {
       backgroundColor: colors.success,
-      borderRadius: 10,
+      borderRadius: radius.pill,
       paddingVertical: 3,
-      paddingHorizontal: 8,
+      paddingHorizontal: 9,
     },
     inProgressChipText: {
       color: colors.onAccent,

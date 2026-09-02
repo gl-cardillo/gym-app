@@ -34,6 +34,7 @@ import {
 import { exportBackupJson, restoreBackupJson } from "../storage/backup";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 import type { ThemeMode } from "../storage/settings";
 
 type Props = TabScreenProps<"Settings">;
@@ -284,10 +285,12 @@ const createStyles = (colors: ColorTokens) =>
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, paddingBottom: 32 },
     sectionTitle: {
-      fontSize: 16,
+      fontSize: 13,
       fontWeight: "700",
-      color: colors.text,
-      marginTop: 24,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginTop: 26,
       marginBottom: 10,
     },
     navRow: {
@@ -295,41 +298,53 @@ const createStyles = (colors: ColorTokens) =>
       alignItems: "center",
       justifyContent: "space-between",
       backgroundColor: colors.surface,
-      borderRadius: 8,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
       padding: 16,
+      ...shadow.soft,
     },
     navRowStacked: { marginTop: 10 },
     navRowText: { fontSize: 16, fontWeight: "600", color: colors.text },
-    navRowChevron: { fontSize: 20, color: colors.textMuted },
-    segmentedRow: { flexDirection: "row", gap: 8 },
+    navRowChevron: { fontSize: 22, color: colors.textFaint, fontWeight: "600" },
+    segmentedRow: {
+      flexDirection: "row",
+      gap: 6,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      padding: 4,
+    },
     segment: {
       flex: 1,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      paddingVertical: 12,
+      borderRadius: radius.sm,
+      borderCurve: "continuous",
+      paddingVertical: 10,
       alignItems: "center",
     },
-    segmentActive: { backgroundColor: colors.primary },
+    segmentActive: { backgroundColor: colors.primary, ...shadow.soft },
     segmentText: { fontSize: 14, fontWeight: "600", color: colors.textMuted },
     segmentTextActive: { color: colors.onAccent },
     helperText: { color: colors.textMuted, fontSize: 13, lineHeight: 18 },
     importHelperText: { marginTop: 20 },
     primaryButton: {
       backgroundColor: colors.primary,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 16,
       alignItems: "center",
       marginTop: 12,
+      ...shadow.card,
     },
     primaryButtonText: {
       color: colors.onAccent,
       fontSize: 16,
-      fontWeight: "600",
+      fontWeight: "700",
     },
     importInput: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 12,
       fontSize: 13,
       color: colors.text,
@@ -340,10 +355,12 @@ const createStyles = (colors: ColorTokens) =>
     },
     secondaryButton: {
       backgroundColor: colors.surface,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 16,
       alignItems: "center",
       marginTop: 12,
+      ...shadow.soft,
     },
     secondaryButtonText: {
       color: colors.text,

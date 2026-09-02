@@ -10,6 +10,7 @@ export type ColorTokens = {
   textMuted: string;
   textFaint: string;
   primary: string;
+  primarySoft: string;
   success: string;
   danger: string;
   dangerBg: string;
@@ -17,46 +18,51 @@ export type ColorTokens = {
   warningBg: string;
   warmup: string;
   onAccent: string;
+  shadow: string;
 };
 
 export const lightColors: ColorTokens = {
-  background: "#ffffff",
-  surface: "#f2f2f2",
-  surfaceAlt: "#f7f7f7",
-  divider: "#f0f0f0",
-  border: "#dddddd",
-  borderMuted: "#cccccc",
+  background: "#f4f5f7",
+  surface: "#ffffff",
+  surfaceAlt: "#eef0f4",
+  divider: "#eaecf0",
+  border: "#e3e6ea",
+  borderMuted: "#cfd4dc",
   inputBackground: "#ffffff",
-  text: "#222222",
-  textMuted: "#666666",
-  textFaint: "#999999",
-  primary: "#2f6feb",
-  success: "#1a9c53",
-  danger: "#cc0000",
-  dangerBg: "#fdecea",
-  warning: "#e8a400",
-  warningBg: "#fff6e0",
+  text: "#1a1c1f",
+  textMuted: "#5c636e",
+  textFaint: "#98a0ac",
+  primary: "#4361ee",
+  primarySoft: "#e7ebfe",
+  success: "#12b76a",
+  danger: "#e5484d",
+  dangerBg: "#fdecec",
+  warning: "#f79009",
+  warningBg: "#fff6e5",
   warmup: "#f5a623",
   onAccent: "#ffffff",
+  shadow: "#101828",
 };
 
 export const darkColors: ColorTokens = {
-  background: "#121212",
-  surface: "#1e1e1e",
-  surfaceAlt: "#262626",
-  divider: "#2a2a2a",
-  border: "#3a3a3a",
-  borderMuted: "#4a4a4a",
-  inputBackground: "#1c1c1c",
-  text: "#f2f2f2",
-  textMuted: "#a3a3a3",
-  textFaint: "#7d7d7d",
-  primary: "#4d8bff",
-  success: "#22b565",
-  danger: "#ff5c5c",
-  dangerBg: "#3a1f1f",
-  warning: "#f0ad2e",
-  warningBg: "#332708",
+  background: "#000000",
+  surface: "#16181d",
+  surfaceAlt: "#22252e",
+  divider: "#2a2e37",
+  border: "#363b45",
+  borderMuted: "#4a505c",
+  inputBackground: "#0e0f13",
+  text: "#f7f9fc",
+  textMuted: "#b4bcc8",
+  textFaint: "#8b94a1",
+  primary: "#7593ff",
+  primarySoft: "#1e2842",
+  success: "#3ddc84",
+  danger: "#ff7a70",
+  dangerBg: "#3f2323",
+  warning: "#ffbd3d",
+  warningBg: "#3a2c0c",
   warmup: "#f5a623",
   onAccent: "#ffffff",
+  shadow: "#000000",
 };

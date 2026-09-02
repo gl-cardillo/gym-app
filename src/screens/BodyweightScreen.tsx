@@ -21,6 +21,7 @@ import { getWeightUnit, WeightUnit } from "../storage/settings";
 import LineChart from "../components/LineChart";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Bodyweight">;
 
@@ -144,12 +145,19 @@ const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, paddingBottom: 32 },
-    title: { fontSize: 24, fontWeight: "700", color: colors.text, marginBottom: 16 },
+    title: {
+      fontSize: 26,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: 16,
+    },
     logRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 12,
       fontSize: 16,
       color: colors.text,
@@ -158,27 +166,33 @@ const createStyles = (colors: ColorTokens) =>
     logInput: { flex: 1 },
     logButton: {
       backgroundColor: colors.primary,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       paddingHorizontal: 20,
       justifyContent: "center",
+      ...shadow.soft,
     },
-    logButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    logButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "700" },
     emptyText: { color: colors.textMuted },
     sectionTitle: {
-      fontSize: 16,
+      fontSize: 13,
       fontWeight: "700",
-      color: colors.text,
-      marginTop: 20,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginTop: 22,
       marginBottom: 12,
     },
     historyRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: 12,
-      borderRadius: 8,
+      padding: 14,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
       backgroundColor: colors.surface,
       marginBottom: 8,
+      ...shadow.soft,
     },
     historyDate: { fontSize: 15, fontWeight: "600", color: colors.text },
     historyRight: { flexDirection: "row", alignItems: "center", gap: 12 },

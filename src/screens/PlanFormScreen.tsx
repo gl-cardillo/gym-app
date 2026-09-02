@@ -29,6 +29,7 @@ import {
 import { getDistanceUnit, DistanceUnit } from "../storage/settings";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PlanForm">;
 
@@ -398,7 +399,8 @@ const createStyles = (colors: ColorTokens) =>
     input: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 12,
       fontSize: 16,
       color: colors.text,
@@ -406,8 +408,9 @@ const createStyles = (colors: ColorTokens) =>
     },
     exerciseCard: {
       backgroundColor: colors.surfaceAlt,
-      borderRadius: 8,
-      padding: 10,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 14,
       marginBottom: 10,
     },
     exerciseCardHeader: {
@@ -429,9 +432,10 @@ const createStyles = (colors: ColorTokens) =>
     modeChip: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 12,
-      paddingVertical: 4,
-      paddingHorizontal: 10,
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill,
+      paddingVertical: 5,
+      paddingHorizontal: 11,
     },
     modeChipActive: {
       backgroundColor: colors.primary,
@@ -443,7 +447,12 @@ const createStyles = (colors: ColorTokens) =>
     field: { flexGrow: 1, flexBasis: 70, minWidth: 60 },
     fieldLabel: { fontSize: 11, color: colors.textFaint, marginBottom: 3 },
     fieldHint: { fontSize: 12, color: colors.textMuted, marginTop: 8 },
-    numberInput: { textAlign: "center", padding: 10, fontSize: 15 },
+    numberInput: {
+      textAlign: "center",
+      padding: 10,
+      fontSize: 15,
+      borderRadius: radius.sm,
+    },
     removeText: { fontSize: 18, color: colors.danger, paddingHorizontal: 4 },
     linkToggle: { alignItems: "center", paddingVertical: 6, marginBottom: 10 },
     linkToggleText: {
@@ -456,11 +465,13 @@ const createStyles = (colors: ColorTokens) =>
     addExerciseText: { color: colors.primary, fontSize: 16 },
     saveButton: {
       backgroundColor: colors.primary,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 16,
       alignItems: "center",
       marginTop: 16,
       marginBottom: 32,
+      ...shadow.card,
     },
-    saveButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "600" },
+    saveButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: "700" },
   });

@@ -13,6 +13,7 @@ import {
 } from "../utils/stats";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MuscleRecovery">;
 
@@ -162,23 +163,30 @@ const createStyles = (colors: ColorTokens) =>
     },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 14,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 16,
       marginTop: 12,
+      ...shadow.soft,
     },
     cardHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
     },
-    groupName: { fontSize: 16, fontWeight: "700", color: colors.text },
+    groupName: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      letterSpacing: -0.2,
+    },
     statusPill: {
       fontSize: 11,
       fontWeight: "700",
       borderWidth: 1,
-      borderRadius: 999,
-      paddingHorizontal: 8,
-      paddingVertical: 2,
+      borderRadius: radius.pill,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
       overflow: "hidden",
     },
     lastTrained: {

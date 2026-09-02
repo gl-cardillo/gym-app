@@ -76,9 +76,12 @@ const TabNavigator = () => {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
         tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.divider,
+          borderTopWidth: 1,
+          elevation: 0,
         },
         tabBarIcon: ({ color, size, focused }) => (
           <Ionicons
@@ -96,7 +99,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ title: "Dashboard" }}
+        options={{ title: "Home" }}
       />
       <Tab.Screen
         name="PlansList"
@@ -131,9 +134,9 @@ const RootNavigator = () => {
       ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
       primary: colors.primary,
       background: colors.background,
-      card: colors.background,
+      card: colors.surface,
       text: colors.text,
-      border: colors.border,
+      border: colors.divider,
     },
   };
 
@@ -142,8 +145,10 @@ const RootNavigator = () => {
       <Stack.Navigator
         initialRouteName="Tabs"
         screenOptions={{
-          headerStyle: { backgroundColor: colors.background },
+          headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
+          headerShadowVisible: false,
+          headerTitleStyle: { fontWeight: "700" },
           contentStyle: { backgroundColor: colors.background },
         }}
       >

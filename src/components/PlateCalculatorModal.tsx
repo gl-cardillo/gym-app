@@ -15,6 +15,7 @@ import {
 import { computePlateBreakdown } from "../utils/plates";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = {
   visible: boolean;
@@ -123,7 +124,7 @@ const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: "rgba(0,0,0,0.55)",
       alignItems: "center",
       justifyContent: "center",
       padding: 24,
@@ -131,11 +132,18 @@ const createStyles = (colors: ColorTokens) =>
     card: {
       width: "100%",
       maxWidth: 340,
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      padding: 20,
+      backgroundColor: colors.surface,
+      borderRadius: radius.xl,
+      borderCurve: "continuous",
+      padding: 22,
+      ...shadow.floating,
     },
-    title: { fontSize: 18, fontWeight: "700", color: colors.text },
+    title: {
+      fontSize: 18,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.3,
+    },
     target: { color: colors.textMuted, marginTop: 2, marginBottom: 16 },
     barRow: {
       flexDirection: "row",
@@ -152,8 +160,8 @@ const createStyles = (colors: ColorTokens) =>
     barInput: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
-      paddingVertical: 6,
+      borderRadius: radius.sm,
+      paddingVertical: 7,
       paddingHorizontal: 10,
       fontSize: 14,
       color: colors.text,
@@ -174,7 +182,7 @@ const createStyles = (colors: ColorTokens) =>
       minWidth: 44,
       paddingHorizontal: 8,
       paddingVertical: 6,
-      borderRadius: 6,
+      borderRadius: radius.sm,
       backgroundColor: colors.primary,
       alignItems: "center",
     },
@@ -193,10 +201,11 @@ const createStyles = (colors: ColorTokens) =>
     },
     closeButton: {
       marginTop: 20,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 12,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      padding: 13,
       alignItems: "center",
     },
-    closeButtonText: { color: colors.text, fontSize: 15, fontWeight: "600" },
+    closeButtonText: { color: colors.text, fontSize: 15, fontWeight: "700" },
   });

@@ -7,6 +7,7 @@ import { getPlans } from '../storage/plans';
 import type { Plan } from '../types';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorTokens } from '../theme/colors';
+import { radius, shadow } from '../theme/tokens';
 
 type Props = TabScreenProps<'PlansList'>;
 
@@ -116,29 +117,35 @@ const createStyles = (colors: ColorTokens) =>
       marginBottom: 24,
     },
     planRow: {
-      padding: 16,
-      borderRadius: 8,
+      padding: 18,
+      borderRadius: radius.lg,
+      borderCurve: 'continuous',
       backgroundColor: colors.surface,
       marginBottom: 12,
+      ...shadow.soft,
     },
-    planName: { fontSize: 18, fontWeight: '600', color: colors.text },
+    planName: { fontSize: 18, fontWeight: '700', color: colors.text, letterSpacing: -0.3 },
     planMeta: { color: colors.textMuted, marginTop: 4 },
     templateLink: { paddingVertical: 14, alignItems: 'center' },
     templateLinkText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
     primaryButton: {
       backgroundColor: colors.primary,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: 'continuous',
       padding: 16,
       alignItems: 'center',
+      ...shadow.card,
     },
-    primaryButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '600' },
+    primaryButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '700' },
     secondaryButton: { padding: 14, alignItems: 'center', marginTop: 4 },
     secondaryButtonText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
     addButton: {
       backgroundColor: colors.primary,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: 'continuous',
       padding: 16,
       alignItems: 'center',
+      ...shadow.card,
     },
-    addButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '600' },
+    addButtonText: { color: colors.onAccent, fontSize: 16, fontWeight: '700' },
   });

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import type { MuscleGroupVolume } from "../utils/stats";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = {
   data: MuscleGroupVolume[];
@@ -52,12 +53,20 @@ const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     container: {
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 12,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 16,
       marginBottom: 16,
+      ...shadow.soft,
     },
-    title: { fontSize: 14, fontWeight: "600", color: colors.text },
-    subtitle: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+    title: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    subtitle: { fontSize: 12, color: colors.textFaint, marginTop: 2 },
     emptyText: { color: colors.textMuted, marginTop: 10 },
     rows: { marginTop: 12, gap: 10 },
     row: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -65,13 +74,13 @@ const createStyles = (colors: ColorTokens) =>
     barTrack: {
       flex: 1,
       height: 10,
-      borderRadius: 5,
-      backgroundColor: colors.divider,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surfaceAlt,
       overflow: "hidden",
     },
     barFill: {
       height: "100%",
-      borderRadius: 5,
+      borderRadius: radius.pill,
       backgroundColor: colors.primary,
     },
     value: {

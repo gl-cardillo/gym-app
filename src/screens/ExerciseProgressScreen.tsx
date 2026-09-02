@@ -16,6 +16,7 @@ import type { TrackingMode } from "../types";
 import LineChart from "../components/LineChart";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ExerciseProgress">;
 
@@ -242,35 +243,53 @@ const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, paddingBottom: 32 },
-    title: { fontSize: 24, fontWeight: "700", color: colors.text, marginBottom: 16 },
+    title: {
+      fontSize: 26,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: 16,
+    },
     emptyText: { color: colors.textMuted },
-    metricTabs: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    metricTabs: {
+      flexDirection: "row",
+      gap: 6,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      padding: 4,
+    },
     metricTab: {
       flexGrow: 1,
-      flexBasis: 90,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      paddingVertical: 10,
+      flexShrink: 1,
+      flexBasis: 70,
+      borderRadius: radius.sm,
+      borderCurve: "continuous",
+      paddingVertical: 9,
       paddingHorizontal: 6,
       alignItems: "center",
     },
-    metricTabActive: { backgroundColor: colors.primary },
+    metricTabActive: { backgroundColor: colors.primary, ...shadow.soft },
     metricTabText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
     metricTabTextActive: { color: colors.onAccent },
     sectionTitle: {
-      fontSize: 16,
+      fontSize: 13,
       fontWeight: "700",
-      color: colors.text,
-      marginTop: 20,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginTop: 22,
       marginBottom: 12,
     },
     historyRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-      padding: 12,
-      borderRadius: 8,
+      padding: 14,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
       backgroundColor: colors.surface,
       marginBottom: 8,
+      ...shadow.soft,
     },
     historyRowPR: {
       backgroundColor: colors.warningBg,

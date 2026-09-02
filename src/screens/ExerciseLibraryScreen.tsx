@@ -29,6 +29,7 @@ import { TRACKING_MODES, TrackingMode } from "../types";
 import { resolveTrackingMode } from "../utils/workout";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius } from "../theme/tokens";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ExerciseLibrary">;
 
@@ -332,7 +333,8 @@ const createStyles = (colors: ColorTokens) =>
     search: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 12,
       fontSize: 15,
       color: colors.text,
@@ -342,17 +344,20 @@ const createStyles = (colors: ColorTokens) =>
     emptyText: { color: colors.textMuted, lineHeight: 20 },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: 8,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
       marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
       overflow: "hidden",
     },
     cardHeader: {
       flexDirection: "row",
       alignItems: "center",
-      padding: 14,
+      padding: 16,
     },
     cardHeaderMain: { flex: 1 },
-    exerciseName: { fontSize: 16, fontWeight: "600", color: colors.text },
+    exerciseName: { fontSize: 16, fontWeight: "700", color: colors.text },
     exerciseMeta: { fontSize: 12, color: colors.textMuted, marginTop: 3 },
     chevron: { fontSize: 12, color: colors.textMuted, marginLeft: 10 },
     panel: {
@@ -379,7 +384,8 @@ const createStyles = (colors: ColorTokens) =>
       flex: 1,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 10,
       fontSize: 15,
       color: colors.text,
@@ -387,20 +393,21 @@ const createStyles = (colors: ColorTokens) =>
     },
     renameButton: {
       backgroundColor: colors.primary,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       paddingHorizontal: 16,
       justifyContent: "center",
       alignItems: "center",
     },
-    renameButtonText: { color: colors.onAccent, fontWeight: "600" },
+    renameButtonText: { color: colors.onAccent, fontWeight: "700" },
     buttonDisabled: { opacity: 0.4 },
     chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
     chip: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 12,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
+      borderRadius: radius.pill,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
     },
     chipActive: {
       backgroundColor: colors.primary,
@@ -410,7 +417,8 @@ const createStyles = (colors: ColorTokens) =>
     chipTextActive: { color: colors.onAccent, fontWeight: "600" },
     secondaryButton: {
       backgroundColor: colors.surfaceAlt,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 12,
       alignItems: "center",
       marginTop: 16,
@@ -419,7 +427,7 @@ const createStyles = (colors: ColorTokens) =>
     mergeList: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: radius.md,
       marginTop: 8,
       overflow: "hidden",
     },
@@ -435,10 +443,11 @@ const createStyles = (colors: ColorTokens) =>
     mergeRowMeta: { fontSize: 11, color: colors.textFaint },
     deleteButton: {
       backgroundColor: colors.dangerBg,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 12,
       alignItems: "center",
       marginTop: 16,
     },
-    deleteButtonText: { color: colors.danger, fontWeight: "600" },
+    deleteButtonText: { color: colors.danger, fontWeight: "700" },
   });

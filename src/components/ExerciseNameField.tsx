@@ -16,6 +16,7 @@ import {
 import { DEFAULT_TRACKING_MODE, TRACKING_MODES, TrackingMode } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius } from "../theme/tokens";
 
 type Props = {
   value: string;
@@ -168,7 +169,8 @@ const createStyles = (colors: ColorTokens) =>
     input: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 12,
       fontSize: 16,
       color: colors.text,
@@ -177,9 +179,9 @@ const createStyles = (colors: ColorTokens) =>
     suggestions: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: radius.md,
       marginTop: 4,
-      backgroundColor: colors.inputBackground,
+      backgroundColor: colors.surface,
       overflow: "hidden",
     },
     suggestionRow: {
@@ -205,9 +207,9 @@ const createStyles = (colors: ColorTokens) =>
     tagChip: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 12,
-      paddingVertical: 4,
-      paddingHorizontal: 10,
+      borderRadius: radius.pill,
+      paddingVertical: 5,
+      paddingHorizontal: 11,
     },
     tagChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     tagChipText: { fontSize: 12, color: colors.textMuted },

@@ -16,6 +16,7 @@ import { WEEKDAY_LABELS } from "../utils/schedule";
 import type { Plan } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Schedule">;
 
@@ -273,25 +274,34 @@ const createStyles = (colors: ColorTokens) =>
     },
     primaryButton: {
       backgroundColor: colors.primary,
-      borderRadius: 8,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
       padding: 16,
       alignItems: "center",
       marginTop: 20,
+      ...shadow.card,
     },
     primaryButtonText: {
       color: colors.onAccent,
       fontSize: 16,
-      fontWeight: "600",
+      fontWeight: "700",
     },
-    segmentedRow: { flexDirection: "row", gap: 8 },
+    segmentedRow: {
+      flexDirection: "row",
+      gap: 6,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      padding: 4,
+    },
     segment: {
       flex: 1,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      paddingVertical: 12,
+      borderRadius: radius.sm,
+      borderCurve: "continuous",
+      paddingVertical: 10,
       alignItems: "center",
     },
-    segmentActive: { backgroundColor: colors.primary },
+    segmentActive: { backgroundColor: colors.primary, ...shadow.soft },
     segmentText: { fontSize: 14, fontWeight: "600", color: colors.textMuted },
     segmentTextActive: { color: colors.onAccent },
     modeHint: {
@@ -321,9 +331,10 @@ const createStyles = (colors: ColorTokens) =>
     chip: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 14,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill,
+      paddingVertical: 7,
+      paddingHorizontal: 14,
     },
     chipActive: {
       backgroundColor: colors.primary,
@@ -336,9 +347,11 @@ const createStyles = (colors: ColorTokens) =>
       alignItems: "center",
       gap: 10,
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 12,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 14,
       marginBottom: 8,
+      ...shadow.soft,
     },
     rotationIndex: {
       fontSize: 13,

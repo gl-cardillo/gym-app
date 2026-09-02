@@ -20,6 +20,7 @@ import { createEmptyWorkout, createWorkoutFromPlan } from "../utils/workout";
 import type { Plan, Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 import MuscleGroupVolumeChart from "../components/MuscleGroupVolumeChart";
 
 type Props = TabScreenProps<"Dashboard">;
@@ -204,34 +205,6 @@ const DashboardScreen = ({ navigation }: Props) => {
         >
           <Text style={styles.quickWorkoutButtonText}>+ Quick Workout</Text>
         </Pressable>
-
-        <Pressable
-          style={styles.bodyweightButton}
-          onPress={() => navigation.navigate("Bodyweight")}
-        >
-          <Text style={styles.bodyweightButtonText}>Bodyweight Log</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.bodyweightButton}
-          onPress={() => navigation.navigate("Measurements")}
-        >
-          <Text style={styles.bodyweightButtonText}>Body Measurements</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.bodyweightButton}
-          onPress={() => navigation.navigate("Trends")}
-        >
-          <Text style={styles.bodyweightButtonText}>Training Trends</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.bodyweightButton}
-          onPress={() => navigation.navigate("MuscleRecovery")}
-        >
-          <Text style={styles.bodyweightButtonText}>Muscle Recovery</Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -250,12 +223,14 @@ const formatDate = (iso: string): string => {
 const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: 16, paddingBottom: 32 },
+    content: { padding: 16, paddingBottom: 40 },
     todayCard: {
       backgroundColor: colors.primary,
-      borderRadius: 10,
-      padding: 16,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 18,
       marginBottom: 16,
+      ...shadow.card,
     },
     todayHeaderRow: {
       flexDirection: "row",
@@ -267,7 +242,7 @@ const createStyles = (colors: ColorTokens) =>
       fontSize: 12,
       fontWeight: "700",
       textTransform: "uppercase",
-      letterSpacing: 0.5,
+      letterSpacing: 0.6,
       opacity: 0.9,
     },
     todayEditLink: {
@@ -279,17 +254,19 @@ const createStyles = (colors: ColorTokens) =>
     },
     todayPlan: {
       color: colors.onAccent,
-      fontSize: 20,
-      fontWeight: "700",
+      fontSize: 22,
+      fontWeight: "800",
+      letterSpacing: -0.4,
       marginTop: 6,
     },
     todayMeta: { color: colors.onAccent, opacity: 0.9, marginTop: 2 },
     todayStartButton: {
       backgroundColor: colors.onAccent,
-      borderRadius: 8,
-      padding: 12,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      padding: 13,
       alignItems: "center",
-      marginTop: 14,
+      marginTop: 16,
     },
     todayStartButtonText: {
       color: colors.primary,
@@ -298,87 +275,96 @@ const createStyles = (colors: ColorTokens) =>
     },
     restCard: {
       backgroundColor: colors.surface,
-      borderRadius: 10,
-      padding: 16,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 18,
       marginBottom: 16,
+      ...shadow.soft,
     },
     restHeading: {
       color: colors.textMuted,
       fontSize: 12,
       fontWeight: "700",
       textTransform: "uppercase",
-      letterSpacing: 0.5,
+      letterSpacing: 0.6,
     },
     restMeta: { color: colors.textMuted, marginTop: 4, fontSize: 13 },
     planWeekCard: {
       backgroundColor: colors.surface,
-      borderRadius: 10,
-      padding: 16,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 18,
       marginBottom: 16,
+      ...shadow.soft,
     },
     planWeekText: { color: colors.primary, fontSize: 15, fontWeight: "700" },
     planWeekMeta: { color: colors.textMuted, marginTop: 2, fontSize: 12 },
-    statsRow: { flexDirection: "row", gap: 12 },
+    statsRow: { flexDirection: "row", gap: 10 },
     volumeChart: { marginTop: 16 },
     statCard: {
       flex: 1,
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 14,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      paddingVertical: 16,
+      paddingHorizontal: 8,
       alignItems: "center",
+      ...shadow.soft,
     },
-    statValue: { fontSize: 22, fontWeight: "700", color: colors.text },
+    statValue: {
+      fontSize: 24,
+      fontWeight: "800",
+      color: colors.text,
+      letterSpacing: -0.5,
+    },
     statLabel: {
       color: colors.textMuted,
-      fontSize: 12,
+      fontSize: 11,
       marginTop: 4,
       textAlign: "center",
     },
     continueCard: {
-      backgroundColor: colors.success,
-      borderRadius: 8,
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
       padding: 16,
       marginTop: 16,
     },
-    continueTitle: { color: colors.onAccent, fontSize: 16, fontWeight: "700" },
-    continueMeta: { color: colors.onAccent, marginTop: 2, opacity: 0.9 },
+    continueTitle: { color: colors.primary, fontSize: 16, fontWeight: "700" },
+    continueMeta: { color: colors.textMuted, marginTop: 2 },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 13,
       fontWeight: "700",
-      color: colors.text,
-      marginTop: 24,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginTop: 26,
       marginBottom: 12,
     },
-    emptyText: { color: colors.textMuted },
+    emptyText: { color: colors.textMuted, fontSize: 14 },
     lastWorkoutCard: {
-      padding: 12,
-      borderRadius: 8,
+      padding: 16,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
       backgroundColor: colors.surface,
+      ...shadow.soft,
     },
-    lastWorkoutPlan: { fontSize: 16, fontWeight: "600", color: colors.text },
+    lastWorkoutPlan: { fontSize: 16, fontWeight: "700", color: colors.text },
     lastWorkoutDate: { color: colors.textMuted, marginTop: 2 },
     quickWorkoutButton: {
-      backgroundColor: colors.success,
-      borderRadius: 8,
-      padding: 16,
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      padding: 17,
       alignItems: "center",
       marginTop: 28,
+      ...shadow.card,
     },
     quickWorkoutButtonText: {
       color: colors.onAccent,
       fontSize: 16,
-      fontWeight: "600",
-    },
-    bodyweightButton: {
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 16,
-      alignItems: "center",
-      marginTop: 12,
-    },
-    bodyweightButtonText: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: "600",
+      fontWeight: "700",
     },
   });

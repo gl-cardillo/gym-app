@@ -17,6 +17,7 @@ import { resolveTrackingMode } from "../utils/workout";
 import { PLAN_TEMPLATES, type PlanTemplate } from "../data/planTemplates";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PlanTemplates">;
 
@@ -186,13 +187,20 @@ const createStyles = (colors: ColorTokens) =>
     },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: 10,
-      padding: 14,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 16,
       marginBottom: 12,
+      ...shadow.soft,
     },
     cardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
     cardHeaderText: { flex: 1 },
-    cardTitle: { fontSize: 17, fontWeight: "700", color: colors.text },
+    cardTitle: {
+      fontSize: 17,
+      fontWeight: "700",
+      color: colors.text,
+      letterSpacing: -0.3,
+    },
     cardDescription: {
       color: colors.textMuted,
       fontSize: 13,
@@ -206,12 +214,12 @@ const createStyles = (colors: ColorTokens) =>
       marginTop: 8,
     },
     badge: {
-      backgroundColor: colors.primary,
-      borderRadius: 10,
-      paddingVertical: 3,
-      paddingHorizontal: 8,
+      backgroundColor: colors.primarySoft,
+      borderRadius: radius.pill,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
     },
-    badgeText: { color: colors.onAccent, fontSize: 11, fontWeight: "700" },
+    badgeText: { color: colors.primary, fontSize: 11, fontWeight: "700" },
     metaText: { color: colors.textFaint, fontSize: 12 },
     chevron: { color: colors.textMuted, fontSize: 12, paddingTop: 2 },
     details: {
@@ -237,11 +245,13 @@ const createStyles = (colors: ColorTokens) =>
     exercise: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },
     addButton: {
       backgroundColor: colors.primary,
-      borderRadius: 8,
-      padding: 12,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      padding: 13,
       alignItems: "center",
-      marginTop: 12,
+      marginTop: 14,
+      ...shadow.soft,
     },
     addButtonDisabled: { opacity: 0.5 },
-    addButtonText: { color: colors.onAccent, fontSize: 15, fontWeight: "600" },
+    addButtonText: { color: colors.onAccent, fontSize: 15, fontWeight: "700" },
   });

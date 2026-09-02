@@ -13,6 +13,7 @@ import {
 import { formatDuration } from "../utils/workout";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
+import { radius, shadow } from "../theme/tokens";
 
 type Props = TabScreenProps<"Records">;
 
@@ -122,6 +123,22 @@ const RecordsScreen = ({ navigation }: Props) => {
           <Text style={styles.trendsLinkChevron}>›</Text>
         </Pressable>
 
+        <Pressable
+          style={styles.trendsLink}
+          onPress={() => navigation.navigate("Bodyweight")}
+        >
+          <Text style={styles.trendsLinkText}>Bodyweight log</Text>
+          <Text style={styles.trendsLinkChevron}>›</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.trendsLink}
+          onPress={() => navigation.navigate("Measurements")}
+        >
+          <Text style={styles.trendsLinkText}>Body measurements</Text>
+          <Text style={styles.trendsLinkChevron}>›</Text>
+        </Pressable>
+
         {records.length === 0 ? (
           <Text style={styles.emptyText}>
             No personal records yet. Log some completed sets to see your bests
@@ -175,29 +192,38 @@ const formatDate = (iso: string): string => {
 const createStyles = (colors: ColorTokens) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    content: { padding: 16, paddingBottom: 32 },
-    emptyText: { color: colors.textMuted },
+    content: { padding: 16, paddingBottom: 40 },
+    emptyText: { color: colors.textMuted, fontSize: 14, lineHeight: 20 },
     trendsLink: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 14,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 16,
       marginBottom: 12,
+      ...shadow.soft,
     },
     trendsLinkText: { fontSize: 15, fontWeight: "600", color: colors.text },
-    trendsLinkChevron: { fontSize: 20, color: colors.textMuted },
+    trendsLinkChevron: { fontSize: 22, color: colors.textFaint, fontWeight: "600" },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: 14,
-      marginBottom: 10,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      padding: 16,
+      marginBottom: 12,
+      ...shadow.soft,
     },
-    exerciseName: { fontSize: 16, fontWeight: "700", color: colors.text },
-    statsRow: { flexDirection: "row", marginTop: 10 },
+    exerciseName: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      letterSpacing: -0.2,
+    },
+    statsRow: { flexDirection: "row", marginTop: 14 },
     statCell: { flex: 1, alignItems: "center" },
-    statValue: { fontSize: 17, fontWeight: "700", color: colors.primary },
-    statLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+    statValue: { fontSize: 18, fontWeight: "800", color: colors.primary },
+    statLabel: { fontSize: 11, color: colors.textMuted, marginTop: 3 },
     statDate: { fontSize: 10, color: colors.textFaint, marginTop: 2 },
   });
