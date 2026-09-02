@@ -31,6 +31,7 @@ import {
   saveRestTimer,
   clearRestTimer,
 } from "../storage/restTimer";
+import { refreshTrainingReminders } from "../notifications/trainingReminders";
 import {
   computeWorkoutVolume,
   createLoggedExercise,
@@ -493,6 +494,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     await clearRestTimer();
     const prNames = await getWorkoutPRs(workout);
     await persist({ ...workout, completedAt: new Date().toISOString() });
+    refreshTrainingReminders();
     if (prNames.length > 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("New PR!", `${prNames.join(", ")}.`, [

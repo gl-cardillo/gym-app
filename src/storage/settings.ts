@@ -5,6 +5,7 @@ const THEME_STORAGE_KEY = "gym-app:settings:themeMode";
 const LENGTH_UNIT_STORAGE_KEY = "gym-app:settings:lengthUnit";
 const DISTANCE_UNIT_STORAGE_KEY = "gym-app:settings:distanceUnit";
 const BAR_WEIGHT_STORAGE_KEY = "gym-app:settings:barWeight";
+const REMINDER_STORAGE_KEY = "gym-app:settings:trainingReminder";
 
 export type WeightUnit = "lbs" | "kg";
 
@@ -75,6 +76,56 @@ export const getBarWeight = async (unit: WeightUnit): Promise<number> => {
 
 export const setBarWeight = async (weight: number): Promise<void> => {
   await AsyncStorage.setItem(BAR_WEIGHT_STORAGE_KEY, String(weight));
+};
+
+export type TrainingReminderSettings = {
+  enabled: boolean;
+  hour: number;
+  minute: number;
+  idleDays: number;
+};
+
+export const DEFAULT_TRAINING_REMINDER: TrainingReminderSettings = {
+  enabled: false,
+  hour: 18,
+  minute: 0,
+  idleDays: 2,
+};
+
+export const getTrainingReminder =
+  async (): Promise<TrainingReminderSettings> => {
+    const raw = await AsyncStorage.getItem(REMINDER_STORAGE_KEY);
+    if (!raw) return DEFAULT_TRAINING_REMINDER;
+    try {
+      const parsed = JSON.parse(raw) as Partial<TrainingReminderSettings>;
+      return {
+        enabled: parsed.enabled === true,
+        hour:
+          typeof parsed.hour === "number" &&
+          parsed.hour >= 0 &&
+          parsed.hour <= 23
+            ? Math.floor(parsed.hour)
+            : DEFAULT_TRAINING_REMINDER.hour,
+        minute:
+          typeof parsed.minute === "number" &&
+          parsed.minute >= 0 &&
+          parsed.minute <= 59
+            ? Math.floor(parsed.minute)
+            : DEFAULT_TRAINING_REMINDER.minute,
+        idleDays:
+          typeof parsed.idleDays === "number" && parsed.idleDays >= 1
+            ? Math.floor(parsed.idleDays)
+            : DEFAULT_TRAINING_REMINDER.idleDays,
+      };
+    } catch {
+      return DEFAULT_TRAINING_REMINDER;
+    }
+  };
+
+export const setTrainingReminder = async (
+  settings: TrainingReminderSettings,
+): Promise<void> => {
+  await AsyncStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(settings));
 };
 
 export const convertStoredBarWeight = async (
