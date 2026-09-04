@@ -18,6 +18,7 @@ import {
   convertStoredWeights,
 } from "../storage/workouts";
 import { convertStoredBodyweights } from "../storage/bodyweight";
+import { convertStoredGoals } from "../storage/goals";
 import { convertStoredMeasurements } from "../storage/measurements";
 import { convertStoredPlanDistances } from "../storage/plans";
 import {
@@ -113,6 +114,7 @@ const SettingsScreen = ({ navigation }: Props) => {
     await convertStoredWeights(unit, next);
     await convertStoredBodyweights(unit, next);
     await convertStoredBarWeight(unit, next);
+    await convertStoredGoals(unit, next);
     setUnit(next);
     await setWeightUnit(next);
   };

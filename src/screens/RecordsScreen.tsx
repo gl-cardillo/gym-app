@@ -109,6 +109,14 @@ const RecordsScreen = ({ navigation }: Props) => {
       <ScrollView contentContainerStyle={styles.content}>
         <Pressable
           style={styles.trendsLink}
+          onPress={() => navigation.navigate("Goals")}
+        >
+          <Text style={styles.trendsLinkText}>Goals & targets</Text>
+          <Text style={styles.trendsLinkChevron}>›</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.trendsLink}
           onPress={() => navigation.navigate("Trends")}
         >
           <Text style={styles.trendsLinkText}>Volume & training trends</Text>
