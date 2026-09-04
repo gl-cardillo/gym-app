@@ -133,6 +133,16 @@ const HistoryScreen = ({ navigation }: Props) => {
         )}
 
         {workouts.length > 0 && (
+          <Pressable
+            style={styles.calendarLink}
+            onPress={() => navigation.navigate("Calendar")}
+          >
+            <Text style={styles.calendarLinkText}>📅 Open month calendar</Text>
+            <Text style={styles.calendarLinkChevron}>›</Text>
+          </Pressable>
+        )}
+
+        {workouts.length > 0 && (
           <View style={styles.filters}>
             <TextInput
               style={styles.searchInput}
@@ -313,6 +323,24 @@ const createStyles = (colors: ColorTokens) =>
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, paddingBottom: 40 },
     emptyText: { color: colors.textMuted, fontSize: 14 },
+    calendarLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderCurve: "continuous",
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      marginBottom: 16,
+      ...shadow.soft,
+    },
+    calendarLinkText: { fontSize: 14, fontWeight: "700", color: colors.text },
+    calendarLinkChevron: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.textFaint,
+    },
     filters: { marginBottom: 12 },
     searchInput: {
       borderWidth: 1,

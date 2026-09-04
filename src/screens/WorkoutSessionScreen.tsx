@@ -49,6 +49,7 @@ import { DEFAULT_TRACKING_MODE } from "../types";
 import type { LoggedSet, TrackingMode, Workout } from "../types";
 import ExerciseNameField from "../components/ExerciseNameField";
 import PlateCalculatorModal from "../components/PlateCalculatorModal";
+import DateTimePickerModal from "../components/DateTimePickerModal";
 import {
   getExerciseLibrary,
   upsertLibraryExercise,
@@ -74,6 +75,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>("mi");
   const [barWeight, setBarWeightState] = useState<number>(45);
   const [plateTarget, setPlateTarget] = useState<number | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [isAddingExercise, setIsAddingExercise] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
   const [newExerciseMode, setNewExerciseMode] = useState<TrackingMode>(
@@ -232,6 +234,23 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const persist = async (next: Workout) => {
     setWorkout(next);
     await saveWorkout(next);
+  };
+
+  const handleChangeDate = (nextStart: Date) => {
+    setShowDatePicker(false);
+    if (!workout) return;
+    const delta = nextStart.getTime() - new Date(workout.startedAt).getTime();
+    let completedAt = workout.completedAt;
+    if (completedAt) {
+      const shifted = new Date(completedAt).getTime() + delta;
+      completedAt = new Date(Math.min(shifted, Date.now())).toISOString();
+    }
+    persist({
+      ...workout,
+      startedAt: nextStart.toISOString(),
+      completedAt,
+    });
+    if (workout.completedAt) refreshTrainingReminders();
   };
 
   const updateSet = (
@@ -493,7 +512,15 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     await cancelRestNotification();
     await clearRestTimer();
     const prNames = await getWorkoutPRs(workout);
-    await persist({ ...workout, completedAt: new Date().toISOString() });
+    const startedMs = new Date(workout.startedAt).getTime();
+    const todayStart = new Date().setHours(0, 0, 0, 0);
+    const completedAt =
+      startedMs < todayStart
+        ? new Date(
+            Math.min(Date.now(), startedMs + 60 * 60 * 1000),
+          ).toISOString()
+        : new Date().toISOString();
+    await persist({ ...workout, completedAt });
     refreshTrainingReminders();
     if (prNames.length > 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -541,12 +568,19 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         ]}
       >
         <Text style={styles.title}>{workout.planName}</Text>
-        <Text style={styles.subtitle}>
-          {formatDateTime(workout.startedAt)}
-          {isCompleted
-            ? ` · finished ${formatDateTime(workout.completedAt as string)}`
-            : " · in progress"}
-        </Text>
+        <Pressable
+          style={styles.subtitleRow}
+          onPress={() => setShowDatePicker(true)}
+          hitSlop={6}
+        >
+          <Text style={styles.subtitle}>
+            {formatDateTime(workout.startedAt)}
+            {isCompleted
+              ? ` · finished ${formatDateTime(workout.completedAt as string)}`
+              : " · in progress"}
+          </Text>
+          <Text style={styles.subtitleEdit}>Edit date</Text>
+        </Pressable>
         {isCompleted && (
           <View style={styles.editingBadge}>
             <Text style={styles.editingBadgeText}>
@@ -1099,6 +1133,16 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         onClose={() => setPlateTarget(null)}
         onBarWeightChange={setBarWeightState}
       />
+
+      <DateTimePickerModal
+        visible={showDatePicker}
+        value={new Date(workout.startedAt)}
+        mode="datetime"
+        title="Workout date & time"
+        maximumDate={new Date()}
+        onConfirm={handleChangeDate}
+        onCancel={() => setShowDatePicker(false)}
+      />
     </View>
   );
 };
@@ -1131,7 +1175,19 @@ const createStyles = (colors: ColorTokens) =>
       color: colors.text,
       letterSpacing: -0.5,
     },
-    subtitle: { color: colors.textMuted, marginTop: 4, marginBottom: 8 },
+    subtitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginTop: 4,
+      marginBottom: 8,
+    },
+    subtitle: { color: colors.textMuted },
+    subtitleEdit: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: "700",
+    },
     volumeText: { color: colors.textMuted, marginBottom: 16, fontSize: 13 },
     editingBadge: {
       alignSelf: "flex-start",
