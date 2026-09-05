@@ -174,10 +174,16 @@ export const createLoggedExercise = ({
   })),
 });
 
+export type DeloadModifier = {
+  volumePct: number;
+  intensityPct: number;
+};
+
 export const createWorkoutFromPlan = (
   plan: Plan,
   previousWorkout?: Workout | null,
   unit: WeightUnit = "lbs",
+  deload?: DeloadModifier | null,
 ): Workout => {
   const previousExercisesById = new Map(
     (previousWorkout?.exercises ?? []).map((exercise) => [
@@ -185,6 +191,11 @@ export const createWorkoutFromPlan = (
       exercise,
     ]),
   );
+  const intensityFactor = deload ? deload.intensityPct / 100 : 1;
+  const scaleWeight = (weight: number | null): number | null =>
+    weight === null || intensityFactor === 1
+      ? weight
+      : roundToIncrement(weight * intensityFactor, unit);
 
   return {
     id: generateId(),
@@ -192,6 +203,7 @@ export const createWorkoutFromPlan = (
     planName: plan.name,
     startedAt: new Date().toISOString(),
     completedAt: null,
+    isDeload: !!deload,
     exercises: plan.exercises.map((exercise) => {
       const trackingMode = exercise.trackingMode ?? DEFAULT_TRACKING_MODE;
       const previous = previousExercisesById.get(exercise.id);
@@ -201,23 +213,28 @@ export const createWorkoutFromPlan = (
       const prefillSets: SetPrefill[] = (previous?.sets ?? []).map((set) =>
         set.isWarmup
           ? {
-              weight: set.weight,
+              weight: scaleWeight(set.weight),
               reps: set.reps,
               durationSeconds: set.durationSeconds,
               distance: set.distance,
               isWarmup: true,
             }
           : {
-              weight: suggestion ? suggestion.suggestedWeight : set.weight,
+              weight: scaleWeight(
+                suggestion ? suggestion.suggestedWeight : set.weight,
+              ),
               reps: suggestion ? suggestion.targetReps : set.reps,
               durationSeconds: set.durationSeconds,
               distance: set.distance,
               isWarmup: false,
             },
       );
+      const targetSets = deload
+        ? Math.max(1, Math.round(exercise.sets * (deload.volumePct / 100)))
+        : exercise.sets;
       return createLoggedExercise({
         name: exercise.name,
-        targetSets: exercise.sets,
+        targetSets,
         targetReps: exercise.reps,
         restSeconds: exercise.restSeconds ?? DEFAULT_REST_SECONDS,
         exerciseId: exercise.id,

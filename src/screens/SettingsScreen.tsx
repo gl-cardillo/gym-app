@@ -192,6 +192,13 @@ const SettingsScreen = ({ navigation }: Props) => {
         </Pressable>
         <Pressable
           style={[styles.navRow, styles.navRowStacked]}
+          onPress={() => navigation.navigate("Mesocycle")}
+        >
+          <Text style={styles.navRowText}>Mesocycle / Deload Plan</Text>
+          <Text style={styles.navRowChevron}>›</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.navRow, styles.navRowStacked]}
           onPress={() => navigation.navigate("ExerciseLibrary")}
         >
           <Text style={styles.navRowText}>Manage Exercise Library</Text>

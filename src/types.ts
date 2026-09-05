@@ -62,4 +62,5 @@ export type Workout = {
   startedAt: string;
   completedAt: string | null;
   exercises: LoggedExercise[];
+  isDeload?: boolean;
 };

@@ -602,6 +602,13 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             </Text>
           </View>
         )}
+        {workout.isDeload && (
+          <View style={styles.deloadBadge}>
+            <Text style={styles.deloadBadgeText}>
+              🔋 Deload week · reduced sets and weight
+            </Text>
+          </View>
+        )}
         {volume > 0 && (
           <Text style={styles.volumeText}>
             {volume.toLocaleString()} {unit} total volume
@@ -1229,6 +1236,21 @@ const createStyles = (colors: ColorTokens) =>
       color: colors.textMuted,
       fontSize: 12,
       fontWeight: "600",
+    },
+    deloadBadge: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: radius.pill,
+      paddingVertical: 4,
+      paddingHorizontal: 12,
+      marginBottom: 16,
+    },
+    deloadBadgeText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: "700",
     },
     emptyText: { color: colors.textMuted },
     exerciseBlock: {

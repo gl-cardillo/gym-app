@@ -8,6 +8,7 @@ import { getExerciseLibrary } from "../storage/exerciseLibrary";
 import { getPlans } from "../storage/plans";
 import { getSchedule } from "../storage/schedule";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
+import { getMesocycle, type Mesocycle } from "../storage/mesocycle";
 import {
   computeDashboardStats,
   computeMuscleGroupVolume,
@@ -16,6 +17,7 @@ import {
   startOfWeek,
 } from "../utils/stats";
 import { resolveTodaysWorkout, type TodaysWorkout } from "../utils/schedule";
+import { getDeloadModifier, getMesoWeekInfo } from "../utils/mesocycle";
 import { createEmptyWorkout, createWorkoutFromPlan } from "../utils/workout";
 import type { Plan, Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
@@ -45,6 +47,7 @@ const DashboardScreen = ({ navigation }: Props) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [hasPlans, setHasPlans] = useState(false);
   const [todays, setTodays] = useState<TodaysWorkout>({ kind: "none" });
+  const [mesocycle, setMesocycle] = useState<Mesocycle | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -54,12 +57,14 @@ const DashboardScreen = ({ navigation }: Props) => {
         getWeightUnit(),
         getPlans(),
         getSchedule(),
-      ]).then(([workouts, library, weightUnit, plans, schedule]) => {
+        getMesocycle(),
+      ]).then(([workouts, library, weightUnit, plans, schedule, meso]) => {
         setStats(computeDashboardStats(workouts));
         setUnit(weightUnit);
         setWorkouts(workouts);
         setHasPlans(plans.length > 0);
         setTodays(resolveTodaysWorkout(schedule, plans, workouts));
+        setMesocycle(meso);
 
         const weekStart = startOfWeek(new Date()).getTime();
         const thisWeekWorkouts = workouts.filter(
@@ -86,10 +91,13 @@ const DashboardScreen = ({ navigation }: Props) => {
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
     const previousWorkout =
       planWorkouts.find((w) => w.completedAt) ?? planWorkouts[0] ?? null;
-    const workout = createWorkoutFromPlan(plan, previousWorkout, unit);
+    const deload = mesocycle ? getDeloadModifier(mesocycle) : null;
+    const workout = createWorkoutFromPlan(plan, previousWorkout, unit, deload);
     await saveWorkout(workout);
     navigation.navigate("WorkoutSession", { workoutId: workout.id });
   };
+
+  const mesoWeekInfo = mesocycle ? getMesoWeekInfo(mesocycle) : null;
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -110,6 +118,15 @@ const DashboardScreen = ({ navigation }: Props) => {
               {todays.plan.exercises.length} exercise
               {todays.plan.exercises.length === 1 ? "" : "s"}
             </Text>
+            {mesoWeekInfo && (
+              <View style={styles.mesoBadge}>
+                <Text style={styles.mesoBadgeText}>
+                  {mesoWeekInfo.isDeload
+                    ? "🔋 Deload week, lighter sets today"
+                    : `Week ${mesoWeekInfo.weekInBlock} of ${mesoWeekInfo.totalWeeks}`}
+                </Text>
+              </View>
+            )}
             <Pressable
               style={styles.todayStartButton}
               onPress={() => handleStartPlan(todays.plan)}
@@ -260,6 +277,19 @@ const createStyles = (colors: ColorTokens) =>
       marginTop: 6,
     },
     todayMeta: { color: colors.onAccent, opacity: 0.9, marginTop: 2 },
+    mesoBadge: {
+      alignSelf: "flex-start",
+      backgroundColor: "rgba(0,0,0,0.18)",
+      borderRadius: radius.pill,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      marginTop: 10,
+    },
+    mesoBadgeText: {
+      color: colors.onAccent,
+      fontSize: 11,
+      fontWeight: "700",
+    },
     todayStartButton: {
       backgroundColor: colors.onAccent,
       borderRadius: radius.md,

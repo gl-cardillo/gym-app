@@ -16,6 +16,7 @@ import PlanFormScreen from "../screens/PlanFormScreen";
 import PlanDetailScreen from "../screens/PlanDetailScreen";
 import PlanTemplatesScreen from "../screens/PlanTemplatesScreen";
 import ScheduleScreen from "../screens/ScheduleScreen";
+import MesocycleScreen from "../screens/MesocycleScreen";
 import WorkoutSessionScreen from "../screens/WorkoutSessionScreen";
 import ExerciseProgressScreen from "../screens/ExerciseProgressScreen";
 import TrendsScreen from "../screens/TrendsScreen";
@@ -44,6 +45,7 @@ export type RootStackParamList = {
   PlanDetail: { planId: string };
   PlanTemplates: undefined;
   Schedule: undefined;
+  Mesocycle: undefined;
   WorkoutSession: { workoutId: string };
   Calendar: undefined;
   Goals: undefined;
@@ -180,6 +182,11 @@ const RootNavigator = () => {
           name="Schedule"
           component={ScheduleScreen}
           options={{ title: "Weekly Schedule" }}
+        />
+        <Stack.Screen
+          name="Mesocycle"
+          component={MesocycleScreen}
+          options={{ title: "Mesocycle" }}
         />
         <Stack.Screen
           name="WorkoutSession"

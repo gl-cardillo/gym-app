@@ -6,6 +6,8 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 import { deletePlan, getPlans } from '../storage/plans';
 import { getWorkoutsForPlan, saveWorkout } from '../storage/workouts';
 import { getWeightUnit } from '../storage/settings';
+import { getMesocycle } from '../storage/mesocycle';
+import { getDeloadModifier } from '../utils/mesocycle';
 import type { Exercise, Plan, Workout } from '../types';
 import {
   createWorkoutFromPlan,
@@ -56,7 +58,9 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
     if (!plan) return;
     const previousWorkout = workouts.find((w) => w.completedAt) ?? workouts[0] ?? null;
     const unit = await getWeightUnit();
-    const workout = createWorkoutFromPlan(plan, previousWorkout, unit);
+    const mesocycle = await getMesocycle();
+    const deload = getDeloadModifier(mesocycle);
+    const workout = createWorkoutFromPlan(plan, previousWorkout, unit, deload);
     await saveWorkout(workout);
     navigation.navigate('WorkoutSession', { workoutId: workout.id });
   };
