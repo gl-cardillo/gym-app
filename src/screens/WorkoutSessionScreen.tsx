@@ -94,6 +94,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [expandedSetIds, setExpandedSetIds] = useState<Set<string>>(new Set());
   const restNotificationIdRef = useRef<string | null>(null);
   const restExerciseNameRef = useRef<string>("");
+  const restKindRef = useRef<"single" | "superset" | "circuit">("single");
 
   useEffect(() => {
     navigation.setOptions({
@@ -136,6 +137,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         return;
       }
       restExerciseNameRef.current = saved.exerciseName;
+      restKindRef.current = saved.restKind ?? "single";
       restNotificationIdRef.current = saved.notificationId;
       setNow(Date.now());
       setRestEndAt(saved.endAt);
@@ -167,7 +169,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         content: {
           title: "Rest complete",
           body: restExerciseNameRef.current
-            ? `${restExerciseNameRef.current} time for your next set.`
+            ? `Time for your next set, ${restExerciseNameRef.current}.`
             : "Time for your next set.",
         },
         trigger: {
@@ -205,6 +207,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
       totalSeconds,
       exerciseName: restExerciseNameRef.current,
       notificationId: restNotificationIdRef.current,
+      restKind: restKindRef.current,
     });
   };
 
@@ -450,7 +453,18 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     if (completed && !workout?.completedAt && !exercise?.linkedToNext) {
       const restSeconds = exercise?.restSeconds ?? DEFAULT_REST_SECONDS;
       const endAt = Date.now() + restSeconds * 1000;
-      restExerciseNameRef.current = exercise?.name ?? "";
+      const group = groupByLinkedToNext(workout?.exercises ?? []).find((g) =>
+        g.some((e) => e.id === exerciseId),
+      );
+      if (group && group.length > 1) {
+        restExerciseNameRef.current = group
+          .map((e) => e.name || "Exercise")
+          .join(" + ");
+        restKindRef.current = group.length > 2 ? "circuit" : "superset";
+      } else {
+        restExerciseNameRef.current = exercise?.name ?? "";
+        restKindRef.current = "single";
+      }
       setNow(Date.now());
       setRestEndAt(endAt);
       setRestTotalSeconds(restSeconds);
@@ -1101,7 +1115,21 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             />
           </View>
           <View style={styles.restBarRow}>
-            <Text style={styles.restLabel}>Rest</Text>
+            <View style={styles.restLabelColumn}>
+              <Text style={styles.restLabel}>
+                {restKindRef.current === "circuit"
+                  ? "Circuit rest"
+                  : restKindRef.current === "superset"
+                    ? "Superset rest"
+                    : "Rest"}
+              </Text>
+              {restKindRef.current !== "single" &&
+                restExerciseNameRef.current && (
+                  <Text style={styles.restSubLabel} numberOfLines={1}>
+                    {restExerciseNameRef.current}
+                  </Text>
+                )}
+            </View>
             <Text style={styles.restTime}>
               {formatRestTime(restSecondsLeft)}
             </Text>
@@ -1480,11 +1508,17 @@ const createStyles = (colors: ColorTokens) =>
       backgroundColor: colors.primary,
     },
     restBarRow: { flexDirection: "row", alignItems: "center" },
+    restLabelColumn: { marginRight: 10, maxWidth: 130 },
     restLabel: {
       color: "#aaaaaa",
       fontSize: 13,
       fontWeight: "600",
-      marginRight: 10,
+    },
+    restSubLabel: {
+      color: "#8e8e93",
+      fontSize: 11,
+      fontWeight: "500",
+      marginTop: 2,
     },
     restTime: {
       color: "#ffffff",

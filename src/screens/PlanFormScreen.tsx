@@ -328,21 +328,28 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                 </View>
               )}
 
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>Rest (s)</Text>
-                <TextInput
-                  style={[styles.input, styles.numberInput]}
-                  value={String(exercise.restSeconds)}
-                  onChangeText={(text) =>
-                    updateExercise(exercise.id, {
-                      restSeconds: Number(text) || 0,
-                    })
-                  }
-                  placeholder="Rest s"
-                  placeholderTextColor={colors.textFaint}
-                  keyboardType="number-pad"
-                />
-              </View>
+              {exercise.linkedToNext ? (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Rest (s)</Text>
+                  <Text style={styles.restHintText}>No rest (linked)</Text>
+                </View>
+              ) : (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Rest (s)</Text>
+                  <TextInput
+                    style={[styles.input, styles.numberInput]}
+                    value={String(exercise.restSeconds)}
+                    onChangeText={(text) =>
+                      updateExercise(exercise.id, {
+                        restSeconds: Number(text) || 0,
+                      })
+                    }
+                    placeholder="Rest s"
+                    placeholderTextColor={colors.textFaint}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              )}
             </View>
 
             {(mode === "duration" || mode === "cardio") &&
@@ -447,6 +454,12 @@ const createStyles = (colors: ColorTokens) =>
     field: { flexGrow: 1, flexBasis: 70, minWidth: 60 },
     fieldLabel: { fontSize: 11, color: colors.textFaint, marginBottom: 3 },
     fieldHint: { fontSize: 12, color: colors.textMuted, marginTop: 8 },
+    restHintText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      fontStyle: "italic",
+      paddingVertical: 10,
+    },
     numberInput: {
       textAlign: "center",
       padding: 10,

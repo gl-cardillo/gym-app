@@ -8,6 +8,7 @@ export type RestTimerState = {
   totalSeconds: number;
   exerciseName: string;
   notificationId: string | null;
+  restKind?: "single" | "superset" | "circuit";
 };
 
 export const getRestTimer = async (): Promise<RestTimerState | null> => {
