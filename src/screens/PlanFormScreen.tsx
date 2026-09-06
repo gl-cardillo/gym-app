@@ -20,6 +20,7 @@ import {
   resolveTrackingMode,
 } from "../utils/workout";
 import ExerciseNameField from "../components/ExerciseNameField";
+import { a11yButton, a11yHeader, a11yOption } from "../utils/a11y";
 import {
   getExerciseLibrary,
   upsertLibraryExercise,
@@ -146,16 +147,21 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.label}>Plan name</Text>
+      <Text style={styles.label} {...a11yHeader}>
+        Plan name
+      </Text>
       <TextInput
         style={styles.input}
         value={name}
         onChangeText={setName}
         placeholder="e.g. Push Day"
         placeholderTextColor={colors.textFaint}
+        accessibilityLabel="Plan name"
       />
 
-      <Text style={styles.label}>Exercises</Text>
+      <Text style={styles.label} {...a11yHeader}>
+        Exercises
+      </Text>
       {exercises.map((exercise, index) => {
         const mode = resolveTrackingMode(exercise.trackingMode);
         return (
@@ -167,6 +173,10 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                   onPress={() => moveExercise(index, -1)}
                   disabled={index === 0}
                   hitSlop={6}
+                  {...a11yButton(
+                    `Move ${exercise.name || "exercise"} ${index + 1} up`,
+                  )}
+                  accessibilityState={{ disabled: index === 0 }}
                 >
                   <Text
                     style={[
@@ -181,6 +191,12 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                   onPress={() => moveExercise(index, 1)}
                   disabled={index === exercises.length - 1}
                   hitSlop={6}
+                  {...a11yButton(
+                    `Move ${exercise.name || "exercise"} ${index + 1} down`,
+                  )}
+                  accessibilityState={{
+                    disabled: index === exercises.length - 1,
+                  }}
                 >
                   <Text
                     style={[
@@ -217,6 +233,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
               <Pressable
                 onPress={() => removeExercise(exercise.id)}
                 hitSlop={6}
+                {...a11yButton(`Remove ${exercise.name || "exercise"} ${index + 1}`)}
               >
                 <Text style={styles.removeText}>✕</Text>
               </Pressable>
@@ -240,6 +257,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                   onPress={() =>
                     updateExercise(exercise.id, { trackingMode: option.value })
                   }
+                  {...a11yOption(mode === option.value, option.label)}
                 >
                   <Text
                     style={[
@@ -265,6 +283,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                   placeholder="Sets"
                   placeholderTextColor={colors.textFaint}
                   keyboardType="number-pad"
+                  accessibilityLabel={`Sets for ${exercise.name || "exercise"}`}
                 />
               </View>
 
@@ -280,6 +299,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                     placeholder="Reps"
                     placeholderTextColor={colors.textFaint}
                     keyboardType="number-pad"
+                    accessibilityLabel={`Reps for ${exercise.name || "exercise"}`}
                   />
                 </View>
               )}
@@ -302,6 +322,9 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                     placeholder="sec"
                     placeholderTextColor={colors.textFaint}
                     keyboardType="number-pad"
+                    accessibilityLabel={`Target time in seconds for ${
+                      exercise.name || "exercise"
+                    }`}
                   />
                 </View>
               )}
@@ -324,6 +347,9 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                     placeholder={distanceUnit}
                     placeholderTextColor={colors.textFaint}
                     keyboardType="decimal-pad"
+                    accessibilityLabel={`Distance in ${distanceUnit} for ${
+                      exercise.name || "exercise"
+                    }`}
                   />
                 </View>
               )}
@@ -347,6 +373,9 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                     placeholder="Rest s"
                     placeholderTextColor={colors.textFaint}
                     keyboardType="number-pad"
+                    accessibilityLabel={`Rest seconds for ${
+                      exercise.name || "exercise"
+                    }`}
                   />
                 </View>
               )}
@@ -363,6 +392,12 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
             <Pressable
               style={styles.linkToggle}
               onPress={() => toggleLinkedToNext(exercise.id)}
+              {...a11yButton(
+                exercise.linkedToNext
+                  ? "Unlink superset with next exercise"
+                  : "Link with next exercise as a superset",
+              )}
+              accessibilityState={{ checked: !!exercise.linkedToNext }}
             >
               <Text
                 style={[
@@ -380,11 +415,19 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
         );
       })}
 
-      <Pressable style={styles.addExerciseButton} onPress={addExercise}>
+      <Pressable
+        style={styles.addExerciseButton}
+        onPress={addExercise}
+        {...a11yButton("Add exercise")}
+      >
         <Text style={styles.addExerciseText}>+ Add Exercise</Text>
       </Pressable>
 
-      <Pressable style={styles.saveButton} onPress={handleSave}>
+      <Pressable
+        style={styles.saveButton}
+        onPress={handleSave}
+        {...a11yButton("Save plan")}
+      >
         <Text style={styles.saveButtonText}>Save Plan</Text>
       </Pressable>
     </ScrollView>

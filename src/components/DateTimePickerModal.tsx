@@ -4,6 +4,7 @@ import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
 import { startOfMonth } from "../utils/calendar";
+import { a11yButton, a11yHeader, a11yOption } from "../utils/a11y";
 import MonthCalendar from "./MonthCalendar";
 
 type Props = {
@@ -115,9 +116,20 @@ const DateTimePickerModal = ({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <Pressable style={styles.backdrop} onPress={onCancel}>
-        <Pressable style={styles.card} onPress={() => {}}>
-          <Text style={styles.title}>{title ?? "Pick a date"}</Text>
+      <Pressable
+        style={styles.backdrop}
+        onPress={onCancel}
+        accessibilityLabel="Close"
+        accessibilityRole="button"
+      >
+        <Pressable
+          style={styles.card}
+          onPress={() => {}}
+          accessibilityViewIsModal
+        >
+          <Text style={styles.title} {...a11yHeader}>
+            {title ?? "Pick a date"}
+          </Text>
           <Text style={styles.preview}>{previewText}</Text>
 
           <MonthCalendar
@@ -131,10 +143,14 @@ const DateTimePickerModal = ({
 
           {showTime && (
             <View style={styles.timeRow}>
-              <View style={styles.stepper}>
+              <View
+                style={styles.stepper}
+                accessibilityLabel={`Hour: ${hour12}`}
+              >
                 <Pressable
                   style={styles.stepButton}
                   onPress={() => shiftHour(-1)}
+                  {...a11yButton("Decrease hour")}
                 >
                   <Text style={styles.stepButtonText}>−</Text>
                 </Pressable>
@@ -145,15 +161,22 @@ const DateTimePickerModal = ({
                 <Pressable
                   style={styles.stepButton}
                   onPress={() => shiftHour(1)}
+                  {...a11yButton("Increase hour")}
                 >
                   <Text style={styles.stepButtonText}>+</Text>
                 </Pressable>
               </View>
 
-              <View style={styles.stepper}>
+              <View
+                style={styles.stepper}
+                accessibilityLabel={`Minute: ${String(
+                  draft.getMinutes(),
+                ).padStart(2, "0")}`}
+              >
                 <Pressable
                   style={styles.stepButton}
                   onPress={() => shiftMinute(-MINUTE_STEP)}
+                  {...a11yButton("Decrease minutes")}
                 >
                   <Text style={styles.stepButtonText}>−</Text>
                 </Pressable>
@@ -166,6 +189,7 @@ const DateTimePickerModal = ({
                 <Pressable
                   style={styles.stepButton}
                   onPress={() => shiftMinute(MINUTE_STEP)}
+                  {...a11yButton("Increase minutes")}
                 >
                   <Text style={styles.stepButtonText}>+</Text>
                 </Pressable>
@@ -185,6 +209,7 @@ const DateTimePickerModal = ({
                         active && styles.meridiemButtonActive,
                       ]}
                       onPress={() => setMeridiem(option.pm)}
+                      {...a11yOption(active, option.label)}
                     >
                       <Text
                         style={[
@@ -202,10 +227,18 @@ const DateTimePickerModal = ({
           )}
 
           <View style={styles.actions}>
-            <Pressable style={styles.cancelButton} onPress={onCancel}>
+            <Pressable
+              style={styles.cancelButton}
+              onPress={onCancel}
+              {...a11yButton("Cancel")}
+            >
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
-            <Pressable style={styles.confirmButton} onPress={handleConfirm}>
+            <Pressable
+              style={styles.confirmButton}
+              onPress={handleConfirm}
+              {...a11yButton(`Set to ${previewText}`)}
+            >
               <Text style={styles.confirmText}>Set</Text>
             </Pressable>
           </View>

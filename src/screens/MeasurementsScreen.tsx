@@ -21,6 +21,7 @@ import {
 } from "../storage/measurements";
 import { getLengthUnit, LengthUnit } from "../storage/settings";
 import LineChart from "../components/LineChart";
+import { a11yButton, a11yHeader, a11yOption } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -92,7 +93,9 @@ const MeasurementsScreen = (_props: Props) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Measurements</Text>
+      <Text style={styles.title} {...a11yHeader}>
+        Measurements
+      </Text>
 
       <View style={styles.logBlock}>
         {isLogging ? (
@@ -110,6 +113,7 @@ const MeasurementsScreen = (_props: Props) => {
                     placeholder={unit}
                     placeholderTextColor={colors.textFaint}
                     keyboardType="decimal-pad"
+                    accessibilityLabel={`${field.label} in ${unit}`}
                   />
                 </View>
               ))}
@@ -122,6 +126,8 @@ const MeasurementsScreen = (_props: Props) => {
                 ]}
                 onPress={handleLog}
                 disabled={!hasAnyInput}
+                {...a11yButton("Save measurements")}
+                accessibilityState={{ disabled: !hasAnyInput }}
               >
                 <Text style={styles.logConfirmText}>Save</Text>
               </Pressable>
@@ -131,13 +137,17 @@ const MeasurementsScreen = (_props: Props) => {
                   setFieldInputs({});
                   setIsLogging(false);
                 }}
+                {...a11yButton("Cancel")}
               >
                 <Text style={styles.logCancelText}>Cancel</Text>
               </Pressable>
             </View>
           </>
         ) : (
-          <Pressable onPress={() => setIsLogging(true)}>
+          <Pressable
+            onPress={() => setIsLogging(true)}
+            {...a11yButton(`Log measurements in ${unit}`)}
+          >
             <Text style={styles.logButtonText}>
               + Log Measurements ({unit})
             </Text>
@@ -156,6 +166,7 @@ const MeasurementsScreen = (_props: Props) => {
                   selectedField === field.key && styles.metricTabActive,
                 ]}
                 onPress={() => setSelectedField(field.key)}
+                {...a11yOption(selectedField === field.key, field.label)}
               >
                 <Text
                   style={[
@@ -177,7 +188,9 @@ const MeasurementsScreen = (_props: Props) => {
         </Text>
       ) : (
         <>
-          <Text style={styles.sectionTitle}>{selectedLabel} over time</Text>
+          <Text style={styles.sectionTitle} {...a11yHeader}>
+            {selectedLabel} over time
+          </Text>
           <LineChart
             height={CHART_HEIGHT}
             unit={unit}
@@ -190,7 +203,9 @@ const MeasurementsScreen = (_props: Props) => {
             }))}
           />
 
-          <Text style={styles.sectionTitle}>History</Text>
+          <Text style={styles.sectionTitle} {...a11yHeader}>
+            History
+          </Text>
           {[...fieldEntries].reverse().map((entry) => (
             <View key={entry.id} style={styles.historyRow}>
               <Text style={styles.historyDate}>{formatDate(entry.date)}</Text>
@@ -198,7 +213,13 @@ const MeasurementsScreen = (_props: Props) => {
                 <Text style={styles.historyValue}>
                   {entry.values[selectedField]} {unit}
                 </Text>
-                <Pressable onPress={() => handleDelete(entry.id)} hitSlop={8}>
+                <Pressable
+                  onPress={() => handleDelete(entry.id)}
+                  hitSlop={8}
+                  {...a11yButton(
+                    `Delete ${selectedLabel} entry: ${formatDate(entry.date)}`,
+                  )}
+                >
                   <Text style={styles.historyDeleteText}>✕</Text>
                 </Pressable>
               </View>

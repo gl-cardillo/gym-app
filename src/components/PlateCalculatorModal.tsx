@@ -16,6 +16,7 @@ import { computePlateBreakdown } from "../utils/plates";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
+import { a11yButton, a11yHeader } from "../utils/a11y";
 
 type Props = {
   visible: boolean;
@@ -61,9 +62,20 @@ const PlateCalculatorModal = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.card} onPress={() => {}}>
-          <Text style={styles.title}>Plate calculator</Text>
+      <Pressable
+        style={styles.backdrop}
+        onPress={onClose}
+        accessibilityLabel="Close"
+        accessibilityRole="button"
+      >
+        <Pressable
+          style={styles.card}
+          onPress={() => {}}
+          accessibilityViewIsModal
+        >
+          <Text style={styles.title} {...a11yHeader}>
+            Plate calculator
+          </Text>
           <Text style={styles.target}>
             {targetWeight} {unit} total
           </Text>
@@ -78,6 +90,7 @@ const PlateCalculatorModal = ({
               onBlur={commitBarWeight}
               keyboardType="decimal-pad"
               placeholderTextColor={colors.textFaint}
+              accessibilityLabel={`Bar weight in ${unit}`}
             />
             <Text style={styles.barUnit}>{unit}</Text>
           </View>
@@ -90,9 +103,16 @@ const PlateCalculatorModal = ({
             </Text>
           ) : (
             <View style={styles.plateList}>
-              <Text style={styles.perSideLabel}>Per side</Text>
+              <Text style={styles.perSideLabel} {...a11yHeader}>
+                Per side
+              </Text>
               {breakdown.perSide.map((entry) => (
-                <View key={entry.plate} style={styles.plateRow}>
+                <View
+                  key={entry.plate}
+                  style={styles.plateRow}
+                  accessible
+                  accessibilityLabel={`${entry.count} × ${entry.plate} ${unit} per side`}
+                >
                   <View style={styles.plateBadge}>
                     <Text style={styles.plateBadgeText}>{entry.plate}</Text>
                   </View>
@@ -109,7 +129,11 @@ const PlateCalculatorModal = ({
             </Text>
           )}
 
-          <Pressable style={styles.closeButton} onPress={onClose}>
+          <Pressable
+            style={styles.closeButton}
+            onPress={onClose}
+            {...a11yButton("Done")}
+          >
             <Text style={styles.closeButtonText}>Done</Text>
           </Pressable>
         </Pressable>

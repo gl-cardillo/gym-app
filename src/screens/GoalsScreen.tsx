@@ -29,6 +29,7 @@ import {
 } from "../storage/goals";
 import { computeGoalProgress } from "../utils/goals";
 import type { Workout } from "../types";
+import { a11yButton, a11yHeader, a11yOption } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -202,13 +203,30 @@ const GoalsScreen = (_props: Props) => {
           const p = progressByGoal.get(goal.id);
           if (!p) return null;
           return (
-            <View key={goal.id} style={styles.goalCard}>
+            <View
+              key={goal.id}
+              style={styles.goalCard}
+              accessible
+              accessibilityLabel={`${p.title}. ${p.subtitle}. ${
+                p.currentLabel
+              } of ${p.targetLabel}. ${
+                p.achieved
+                  ? "Achieved"
+                  : p.remainingLabel
+                    ? p.remainingLabel
+                    : `${Math.round(p.fraction * 100)} percent`
+              }`}
+            >
               <View style={styles.goalHeader}>
                 <View style={styles.goalHeaderText}>
                   <Text style={styles.goalTitle}>{p.title}</Text>
                   <Text style={styles.goalSubtitle}>{p.subtitle}</Text>
                 </View>
-                <Pressable onPress={() => handleDelete(goal)} hitSlop={8}>
+                <Pressable
+                  onPress={() => handleDelete(goal)}
+                  hitSlop={8}
+                  {...a11yButton(`Delete goal: ${p.title}`)}
+                >
                   <Text style={styles.deleteText}>✕</Text>
                 </Pressable>
               </View>
@@ -240,7 +258,9 @@ const GoalsScreen = (_props: Props) => {
 
         {adding ? (
           <View style={styles.addCard}>
-            <Text style={styles.addTitle}>New goal</Text>
+            <Text style={styles.addTitle} {...a11yHeader}>
+              New goal
+            </Text>
 
             <View style={styles.chipRow}>
               {TYPE_OPTIONS.map((option) => (
@@ -251,6 +271,7 @@ const GoalsScreen = (_props: Props) => {
                     draftType === option.value && styles.chipActive,
                   ]}
                   onPress={() => setDraftType(option.value)}
+                  {...a11yOption(draftType === option.value, option.label)}
                 >
                   <Text
                     style={[
@@ -284,6 +305,10 @@ const GoalsScreen = (_props: Props) => {
                         draftExercise?.id === exercise.id && styles.chipActive,
                       ]}
                       onPress={() => setDraftExercise(exercise)}
+                      {...a11yOption(
+                        draftExercise?.id === exercise.id,
+                        exercise.name,
+                      )}
                     >
                       <Text
                         style={[
@@ -309,6 +334,10 @@ const GoalsScreen = (_props: Props) => {
                       draftWorkoutCount === count && styles.chipActive,
                     ]}
                     onPress={() => setDraftWorkoutCount(count)}
+                    {...a11yOption(
+                      draftWorkoutCount === count,
+                      `${count} per week`,
+                    )}
                   >
                     <Text
                       style={[
@@ -336,6 +365,13 @@ const GoalsScreen = (_props: Props) => {
                   }
                   placeholderTextColor={colors.textFaint}
                   keyboardType="decimal-pad"
+                  accessibilityLabel={
+                    draftType === "weeklyVolume"
+                      ? `Target volume per week in ${unit}`
+                      : draftType === "bodyweight"
+                        ? `Target bodyweight in ${unit}`
+                        : `Target 1RM in ${unit}`
+                  }
                 />
                 {draftType === "bodyweight" && (
                   <Text style={styles.hintText}>
@@ -348,10 +384,18 @@ const GoalsScreen = (_props: Props) => {
             )}
 
             <View style={styles.addActions}>
-              <Pressable style={styles.saveButton} onPress={handleSave}>
+              <Pressable
+                style={styles.saveButton}
+                onPress={handleSave}
+                {...a11yButton("Save goal")}
+              >
                 <Text style={styles.saveButtonText}>Save goal</Text>
               </Pressable>
-              <Pressable style={styles.cancelButton} onPress={resetDraft}>
+              <Pressable
+                style={styles.cancelButton}
+                onPress={resetDraft}
+                {...a11yButton("Cancel")}
+              >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </Pressable>
             </View>
@@ -360,6 +404,7 @@ const GoalsScreen = (_props: Props) => {
           <Pressable
             style={styles.newGoalButton}
             onPress={() => setAdding(true)}
+            {...a11yButton("New goal")}
           >
             <Text style={styles.newGoalButtonText}>+ New goal</Text>
           </Pressable>

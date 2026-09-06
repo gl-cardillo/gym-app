@@ -14,6 +14,7 @@ import {
 import { formatDuration, resolveTrackingMode } from "../utils/workout";
 import type { TrackingMode } from "../types";
 import LineChart from "../components/LineChart";
+import { a11yHeader, a11yOption } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -145,7 +146,9 @@ const ExerciseProgressScreen = ({ route }: Props) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{exerciseName}</Text>
+      <Text style={styles.title} {...a11yHeader}>
+        {exerciseName}
+      </Text>
 
       {history.length === 0 || !metric ? (
         <Text style={styles.emptyText}>
@@ -162,6 +165,7 @@ const ExerciseProgressScreen = ({ route }: Props) => {
                   metric.key === m.key && styles.metricTabActive,
                 ]}
                 onPress={() => setMetricKey(m.key)}
+                {...a11yOption(metric.key === m.key, m.label)}
               >
                 <Text
                   style={[
@@ -175,7 +179,9 @@ const ExerciseProgressScreen = ({ route }: Props) => {
             ))}
           </View>
 
-          <Text style={styles.sectionTitle}>{metric.label} per session</Text>
+          <Text style={styles.sectionTitle} {...a11yHeader}>
+            {metric.label} per session
+          </Text>
           <LineChart
             height={CHART_HEIGHT}
             formatValue={metric.format}
@@ -189,7 +195,9 @@ const ExerciseProgressScreen = ({ route }: Props) => {
             }))}
           />
 
-          <Text style={styles.sectionTitle}>History</Text>
+          <Text style={styles.sectionTitle} {...a11yHeader}>
+            History
+          </Text>
           {[...history].reverse().map((entry) => {
             const value = metric.get(entry);
             const isPR = maxValue > 0 && value === maxValue;
@@ -197,6 +205,14 @@ const ExerciseProgressScreen = ({ route }: Props) => {
               <View
                 key={entry.workoutId}
                 style={[styles.historyRow, isPR && styles.historyRowPR]}
+                accessible
+                accessibilityLabel={`${formatDate(entry.date)}, ${entry.planName}. ${metric.label} ${metric.format(
+                  value,
+                )}${isPR ? ", personal record" : ""}${
+                  entry.volume > 0
+                    ? `. ${entry.volume.toLocaleString()} ${unit} volume`
+                    : ""
+                }`}
               >
                 <View>
                   <Text style={styles.historyDate}>

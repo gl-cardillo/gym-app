@@ -8,6 +8,7 @@ import { getWorkouts } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import { computeWeeklyTrends, WeeklyTrendPoint } from "../utils/stats";
 import LineChart from "../components/LineChart";
+import { a11yHeader, a11yOption } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -105,6 +106,7 @@ const TrendsScreen = (_props: Props) => {
                     metric.key === m.key && styles.metricTabActive,
                   ]}
                   onPress={() => setMetricKey(m.key)}
+                  {...a11yOption(metric.key === m.key, m.label)}
                 >
                   <Text
                     style={[
@@ -140,7 +142,9 @@ const TrendsScreen = (_props: Props) => {
               )}
             </View>
 
-            <Text style={styles.sectionTitle}>{metric.label} per week</Text>
+            <Text style={styles.sectionTitle} {...a11yHeader}>
+              {metric.label} per week
+            </Text>
             <LineChart
               height={CHART_HEIGHT}
               formatValue={metric.format}
@@ -153,7 +157,9 @@ const TrendsScreen = (_props: Props) => {
               }))}
             />
 
-            <Text style={styles.sectionTitle}>By week</Text>
+            <Text style={styles.sectionTitle} {...a11yHeader}>
+              By week
+            </Text>
             {[...points].reverse().map((p) => {
               const value = metric.get(p);
               const isMax = maxValue > 0 && value === maxValue;
@@ -161,6 +167,12 @@ const TrendsScreen = (_props: Props) => {
                 <View
                   key={p.weekStart}
                   style={[styles.weekRow, isMax && styles.weekRowMax]}
+                  accessible
+                  accessibilityLabel={`Week of ${formatWeek(p.weekStart)}: ${metric.format(
+                    value,
+                  )}${isMax ? ", best week" : ""}. ${p.workouts} workout${
+                    p.workouts === 1 ? "" : "s"
+                  }, ${p.workingSets} sets`}
                 >
                   <View>
                     <Text style={styles.weekDate}>

@@ -14,6 +14,7 @@ import {
 } from "../storage/schedule";
 import { WEEKDAY_LABELS } from "../utils/schedule";
 import type { Plan } from "../types";
+import { a11yButton, a11yHeader, a11yOption } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -84,7 +85,9 @@ const ScheduleScreen = ({ navigation }: Props) => {
     return (
       <SafeAreaView style={styles.container} edges={["left", "right"]}>
         <View style={styles.emptyWrap}>
-          <Text style={styles.emptyTitle}>No plans to schedule yet</Text>
+          <Text style={styles.emptyTitle} {...a11yHeader}>
+            No plans to schedule yet
+          </Text>
           <Text style={styles.emptyBody}>
             Create a plan or add a starter template, then come back to build
             your week.
@@ -92,6 +95,7 @@ const ScheduleScreen = ({ navigation }: Props) => {
           <Pressable
             style={styles.primaryButton}
             onPress={() => navigation.navigate("PlanTemplates")}
+            {...a11yButton("Browse starter templates")}
           >
             <Text style={styles.primaryButtonText}>
               Browse starter templates
@@ -114,6 +118,7 @@ const ScheduleScreen = ({ navigation }: Props) => {
                 schedule.mode === option.value && styles.segmentActive,
               ]}
               onPress={() => setMode(option.value)}
+              {...a11yOption(schedule.mode === option.value, option.label)}
             >
               <Text
                 style={[
@@ -134,7 +139,9 @@ const ScheduleScreen = ({ navigation }: Props) => {
           <View style={styles.section}>
             {WEEKDAY_LABELS.map((label, dayIndex) => (
               <View key={label} style={styles.dayRow}>
-                <Text style={styles.dayLabel}>{label}</Text>
+                <Text style={styles.dayLabel} {...a11yHeader}>
+                  {label}
+                </Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -146,6 +153,10 @@ const ScheduleScreen = ({ navigation }: Props) => {
                       schedule.weekly[dayIndex] === null && styles.chipActive,
                     ]}
                     onPress={() => setDayPlan(dayIndex, null)}
+                    {...a11yOption(
+                      schedule.weekly[dayIndex] === null,
+                      `${label}: rest`,
+                    )}
                   >
                     <Text
                       style={[
@@ -164,6 +175,7 @@ const ScheduleScreen = ({ navigation }: Props) => {
                         key={plan.id}
                         style={[styles.chip, active && styles.chipActive]}
                         onPress={() => setDayPlan(dayIndex, plan.id)}
+                        {...a11yOption(active, `${label}: ${plan.name}`)}
                       >
                         <Text
                           style={[
@@ -197,6 +209,8 @@ const ScheduleScreen = ({ navigation }: Props) => {
                       onPress={() => moveRotation(index, -1)}
                       disabled={index === 0}
                       hitSlop={6}
+                      {...a11yButton(`Move ${planName(planId)} up`)}
+                      accessibilityState={{ disabled: index === 0 }}
                     >
                       <Text
                         style={[
@@ -211,6 +225,10 @@ const ScheduleScreen = ({ navigation }: Props) => {
                       onPress={() => moveRotation(index, 1)}
                       disabled={index === schedule.rotation.length - 1}
                       hitSlop={6}
+                      {...a11yButton(`Move ${planName(planId)} down`)}
+                      accessibilityState={{
+                        disabled: index === schedule.rotation.length - 1,
+                      }}
                     >
                       <Text
                         style={[
@@ -225,6 +243,7 @@ const ScheduleScreen = ({ navigation }: Props) => {
                     <Pressable
                       onPress={() => removeFromRotation(index)}
                       hitSlop={6}
+                      {...a11yButton(`Remove ${planName(planId)} from rotation`)}
                     >
                       <Text style={styles.removeText}>✕</Text>
                     </Pressable>
@@ -233,13 +252,16 @@ const ScheduleScreen = ({ navigation }: Props) => {
               ))
             )}
 
-            <Text style={styles.addLabel}>Add a plan</Text>
+            <Text style={styles.addLabel} {...a11yHeader}>
+              Add a plan
+            </Text>
             <View style={styles.chipRowWrap}>
               {plans.map((plan) => (
                 <Pressable
                   key={plan.id}
                   style={styles.chip}
                   onPress={() => addToRotation(plan.id)}
+                  {...a11yButton(`Add ${plan.name} to rotation`)}
                 >
                   <Text style={styles.chipText}>+ {plan.name}</Text>
                 </Pressable>

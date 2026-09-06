@@ -46,6 +46,7 @@ import {
   resolveTrackingMode,
 } from "../utils/workout";
 import { generateId } from "../utils/id";
+import { a11yButton, a11yHeader, a11yOption } from "../utils/a11y";
 import { DEFAULT_TRACKING_MODE } from "../types";
 import type { LoggedSet, TrackingMode, Workout } from "../types";
 import ExerciseNameField from "../components/ExerciseNameField";
@@ -582,11 +583,19 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
           restSecondsLeft !== null && styles.contentWithRestBar,
         ]}
       >
-        <Text style={styles.title}>{workout.planName}</Text>
+        <Text style={styles.title} {...a11yHeader}>
+          {workout.planName}
+        </Text>
         <Pressable
           style={styles.subtitleRow}
           onPress={() => setShowDatePicker(true)}
           hitSlop={6}
+          {...a11yButton(
+            `${formatDateTime(workout.startedAt)}${
+              isCompleted ? ", completed" : ", in progress"
+            }`,
+            "Edit workout date and time",
+          )}
         >
           <Text style={styles.subtitle}>
             {formatDateTime(workout.startedAt)}
@@ -648,6 +657,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                           exerciseName: exercise.name || "Untitled",
                         })
                       }
+                      {...a11yButton(
+                        exercise.name || "Untitled",
+                        "View progress for this exercise",
+                      )}
                     >
                       <Text style={styles.exerciseName}>
                         {exercise.name || "Untitled"}
@@ -656,6 +669,9 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     <Pressable
                       style={styles.removeExerciseButton}
                       onPress={() => deleteExercise(exercise.id, exercise.name)}
+                      {...a11yButton(
+                        `Remove ${exercise.name || "exercise"}`,
+                      )}
                     >
                       <Text style={styles.removeExerciseText}>✕</Text>
                     </Pressable>
@@ -746,6 +762,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                               })
                             }
                             hitSlop={6}
+                            {...a11yOption(
+                              set.isWarmup,
+                              `Set ${index + 1} warm-up`,
+                            )}
                           >
                             <View
                               style={[
@@ -779,6 +799,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                             placeholder={distanceUnit}
                             placeholderTextColor={colors.textFaint}
                             keyboardType="decimal-pad"
+                            accessibilityLabel={`Set ${index + 1} distance in ${distanceUnit}`}
                           />
                         )}
                         {showWeightCol && (
@@ -797,6 +818,9 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                             }
                             placeholderTextColor={colors.textFaint}
                             keyboardType="decimal-pad"
+                            accessibilityLabel={`Set ${index + 1} ${
+                              mode === "bodyweight" ? "added weight" : "weight"
+                            } in ${unit}`}
                           />
                         )}
                         {showDurationCol && (
@@ -820,6 +844,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                             }
                             placeholderTextColor={colors.textFaint}
                             keyboardType="number-pad"
+                            accessibilityLabel={`Set ${index + 1} time in seconds`}
                           />
                         )}
                         {showRepsCol && (
@@ -834,11 +859,14 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                             placeholder={String(set.targetReps)}
                             placeholderTextColor={colors.textFaint}
                             keyboardType="number-pad"
+                            accessibilityLabel={`Set ${index + 1} reps`}
                           />
                         )}
                         <Pressable
                           style={styles.doneCol}
                           onPress={() => toggleSetCompleted(exercise.id, set)}
+                          {...a11yButton(`Set ${index + 1} complete`)}
+                          accessibilityState={{ checked: set.completed }}
                         >
                           <View
                             style={[
@@ -855,6 +883,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                           style={styles.noteCol}
                           onPress={() => toggleSetExpanded(set.id)}
                           hitSlop={6}
+                          {...a11yButton(`Set ${index + 1} RPE and notes`)}
+                          accessibilityState={{
+                            expanded: expandedSetIds.has(set.id),
+                          }}
                         >
                           <Text
                             style={[
@@ -869,6 +901,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                         <Pressable
                           style={styles.setDeleteCol}
                           onPress={() => deleteSet(exercise.id, set.id)}
+                          {...a11yButton(`Delete set ${index + 1}`)}
                         >
                           <Text style={styles.setDeleteText}>✕</Text>
                         </Pressable>
@@ -892,6 +925,9 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                                 setPlateTarget(set.weight as number)
                               }
                               hitSlop={6}
+                              {...a11yButton(
+                                `Plate calculator for ${set.weight} ${unit}`,
+                              )}
                             >
                               <Text style={styles.plateLink}>🏋️ Plates</Text>
                             </Pressable>
@@ -921,6 +957,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                               placeholder="1-10"
                               placeholderTextColor={colors.textFaint}
                               keyboardType="decimal-pad"
+                              accessibilityLabel={`Set ${index + 1} RPE, 1 to 10`}
                             />
                           </View>
 
@@ -933,6 +970,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                             placeholder="How did it feel? (optional)"
                             placeholderTextColor={colors.textFaint}
                             multiline
+                            accessibilityLabel={`Set ${index + 1} note`}
                           />
                         </View>
                       )}
@@ -943,6 +981,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     <Pressable
                       style={styles.addSetButton}
                       onPress={() => addSet(exercise.id)}
+                      {...a11yButton(`Add set to ${exercise.name || "exercise"}`)}
                     >
                       <Text style={styles.addSetButtonText}>+ Add Set</Text>
                     </Pressable>
@@ -950,6 +989,9 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                       <Pressable
                         style={styles.addSetButton}
                         onPress={() => addWarmupSets(exercise.id)}
+                        {...a11yButton(
+                          `Add warm-up sets to ${exercise.name || "exercise"}`,
+                        )}
                       >
                         <Text style={styles.addSetButtonText}>
                           + Warm-up sets
@@ -995,6 +1037,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                         styles.addExerciseModeChipActive,
                     ]}
                     onPress={() => setNewExerciseMode(option.value)}
+                    {...a11yOption(
+                      newExerciseMode === option.value,
+                      option.label,
+                    )}
                   >
                     <Text
                       style={[
@@ -1016,6 +1062,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   placeholder="Sets"
                   placeholderTextColor={colors.textFaint}
                   keyboardType="number-pad"
+                  accessibilityLabel="Sets"
                 />
                 {(newExerciseMode === "weighted" ||
                   newExerciseMode === "bodyweight") && (
@@ -1026,6 +1073,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     placeholder="Reps"
                     placeholderTextColor={colors.textFaint}
                     keyboardType="number-pad"
+                    accessibilityLabel="Reps"
                   />
                 )}
                 {(newExerciseMode === "duration" ||
@@ -1037,6 +1085,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     placeholder="Time (s)"
                     placeholderTextColor={colors.textFaint}
                     keyboardType="number-pad"
+                    accessibilityLabel="Target time in seconds"
                   />
                 )}
                 {newExerciseMode === "cardio" && (
@@ -1047,6 +1096,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     placeholder={`Dist (${distanceUnit})`}
                     placeholderTextColor={colors.textFaint}
                     keyboardType="decimal-pad"
+                    accessibilityLabel={`Distance in ${distanceUnit}`}
                   />
                 )}
                 <TextInput
@@ -1056,25 +1106,31 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   placeholder="Rest s"
                   placeholderTextColor={colors.textFaint}
                   keyboardType="number-pad"
+                  accessibilityLabel="Rest seconds"
                 />
               </View>
               <View style={styles.addExerciseActions}>
                 <Pressable
                   style={styles.addExerciseConfirmButton}
                   onPress={handleAddExercise}
+                  {...a11yButton("Add exercise")}
                 >
                   <Text style={styles.addExerciseConfirmText}>Add</Text>
                 </Pressable>
                 <Pressable
                   style={styles.addExerciseCancelButton}
                   onPress={() => setIsAddingExercise(false)}
+                  {...a11yButton("Cancel adding exercise")}
                 >
                   <Text style={styles.addExerciseCancelText}>Cancel</Text>
                 </Pressable>
               </View>
             </>
           ) : (
-            <Pressable onPress={() => setIsAddingExercise(true)}>
+            <Pressable
+              onPress={() => setIsAddingExercise(true)}
+              {...a11yButton("Add exercise")}
+            >
               <Text style={styles.addExerciseButtonText}>+ Add Exercise</Text>
             </Pressable>
           )}
@@ -1085,15 +1141,24 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
             <Pressable
               style={styles.finishButton}
               onPress={() => navigation.goBack()}
+              {...a11yButton("Done")}
             >
               <Text style={styles.finishButtonText}>Done</Text>
             </Pressable>
           ) : (
-            <Pressable style={styles.finishButton} onPress={handleFinish}>
+            <Pressable
+              style={styles.finishButton}
+              onPress={handleFinish}
+              {...a11yButton("Finish workout")}
+            >
               <Text style={styles.finishButtonText}>Finish Workout</Text>
             </Pressable>
           )}
-          <Pressable style={styles.deleteButton} onPress={handleDelete}>
+          <Pressable
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            {...a11yButton("Delete workout")}
+          >
             <Text style={styles.deleteButtonText}>Delete</Text>
           </Pressable>
         </View>
@@ -1144,16 +1209,22 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
               <Pressable
                 style={styles.restAdjustButton}
                 onPress={() => adjustRest(-15)}
+                {...a11yButton("Subtract 15 seconds from rest")}
               >
                 <Text style={styles.restAdjustText}>-15s</Text>
               </Pressable>
               <Pressable
                 style={styles.restAdjustButton}
                 onPress={() => adjustRest(15)}
+                {...a11yButton("Add 15 seconds to rest")}
               >
                 <Text style={styles.restAdjustText}>+15s</Text>
               </Pressable>
-              <Pressable style={styles.restSkipButton} onPress={skipRest}>
+              <Pressable
+                style={styles.restSkipButton}
+                onPress={skipRest}
+                {...a11yButton("Skip rest")}
+              >
                 <Text style={styles.restSkipText}>Skip</Text>
               </Pressable>
             </View>

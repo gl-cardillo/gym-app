@@ -8,6 +8,7 @@ import type { Plan } from '../types';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorTokens } from '../theme/colors';
 import { radius, shadow } from '../theme/tokens';
+import { a11yButton, a11yHeader, a11yLink } from '../utils/a11y';
 
 type Props = TabScreenProps<'PlansList'>;
 
@@ -37,7 +38,9 @@ const PlansListScreen = ({ navigation }: Props) => {
         ListEmptyComponent={
           loaded ? (
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyTitle}>No plans yet</Text>
+              <Text style={styles.emptyTitle} {...a11yHeader}>
+                No plans yet
+              </Text>
               <Text style={styles.emptyBody}>
                 Start from a proven program like StrongLifts 5×5, Push/Pull/Legs,
                 or Upper/Lower, then tweak it to taste.
@@ -45,6 +48,7 @@ const PlansListScreen = ({ navigation }: Props) => {
               <Pressable
                 style={styles.primaryButton}
                 onPress={() => navigation.navigate('PlanTemplates')}
+                {...a11yButton('Browse starter templates')}
               >
                 <Text style={styles.primaryButtonText}>
                   Browse starter templates
@@ -53,6 +57,7 @@ const PlansListScreen = ({ navigation }: Props) => {
               <Pressable
                 style={styles.secondaryButton}
                 onPress={() => navigation.navigate('PlanForm', {})}
+                {...a11yButton('Build a plan from scratch')}
               >
                 <Text style={styles.secondaryButtonText}>
                   Or build one from scratch
@@ -66,6 +71,7 @@ const PlansListScreen = ({ navigation }: Props) => {
             <Pressable
               style={styles.templateLink}
               onPress={() => navigation.navigate('PlanTemplates')}
+              {...a11yLink('Add from a starter template')}
             >
               <Text style={styles.templateLinkText}>
                  Add from a starter template
@@ -77,6 +83,11 @@ const PlansListScreen = ({ navigation }: Props) => {
           <Pressable
             style={styles.planRow}
             onPress={() => navigation.navigate('PlanDetail', { planId: item.id })}
+            {...a11yButton(
+              `${item.name}, ${item.exercises.length} exercise${
+                item.exercises.length === 1 ? '' : 's'
+              }`,
+            )}
           >
             <Text style={styles.planName}>{item.name}</Text>
             <Text style={styles.planMeta}>{item.exercises.length} exercises</Text>
@@ -87,6 +98,7 @@ const PlansListScreen = ({ navigation }: Props) => {
         <Pressable
           style={styles.addButton}
           onPress={() => navigation.navigate('PlanForm', {})}
+          {...a11yButton('New plan')}
         >
           <Text style={styles.addButtonText}>+ New Plan</Text>
         </Pressable>

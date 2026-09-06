@@ -3,6 +3,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import {
+  a11yButton,
+  a11yHeader,
+  a11yOption,
+  CONSTRAINED_FONT_SCALE,
+} from "../utils/a11y";
+import {
   addMonths,
   buildMonthGrid,
   formatMonthTitle,
@@ -55,17 +61,23 @@ const MonthCalendar = ({
           disabled={!canGoPrev}
           hitSlop={10}
           style={styles.navButton}
+          {...a11yButton("Previous month")}
+          accessibilityState={{ disabled: !canGoPrev }}
         >
           <Text style={[styles.navText, !canGoPrev && styles.navTextDisabled]}>
             ‹
           </Text>
         </Pressable>
-        <Text style={styles.title}>{formatMonthTitle(month)}</Text>
+        <Text style={styles.title} {...a11yHeader}>
+          {formatMonthTitle(month)}
+        </Text>
         <Pressable
           onPress={() => onChangeMonth(addMonths(month, 1))}
           disabled={!canGoNext}
           hitSlop={10}
           style={styles.navButton}
+          {...a11yButton("Next month")}
+          accessibilityState={{ disabled: !canGoNext }}
         >
           <Text style={[styles.navText, !canGoNext && styles.navTextDisabled]}>
             ›
@@ -73,9 +85,17 @@ const MonthCalendar = ({
         </Pressable>
       </View>
 
-      <View style={styles.weekdayRow}>
+      <View
+        style={styles.weekdayRow}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         {WEEKDAY_LABELS.map((label) => (
-          <Text key={label} style={styles.weekdayLabel}>
+          <Text
+            key={label}
+            style={styles.weekdayLabel}
+            maxFontSizeMultiplier={CONSTRAINED_FONT_SCALE}
+          >
             {label}
           </Text>
         ))}
@@ -93,12 +113,27 @@ const MonthCalendar = ({
             const isToday = isSameDay(day, today);
             const count = markers?.get(localDateKey(day)) ?? 0;
 
+            const dayLabel =
+              day.toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              }) +
+              (isToday ? ", today" : "") +
+              (count > 0
+                ? `, ${count} workout${count === 1 ? "" : "s"}`
+                : "");
+
             return (
               <Pressable
                 key={day.toISOString()}
                 style={styles.dayCell}
                 disabled={disabled || !onSelectDate}
                 onPress={() => onSelectDate?.(startOfDay(day))}
+                {...(onSelectDate
+                  ? a11yOption(selected, dayLabel)
+                  : { accessibilityLabel: dayLabel })}
+                accessibilityState={{ selected, disabled }}
               >
                 <View
                   style={[
@@ -114,6 +149,7 @@ const MonthCalendar = ({
                       disabled && styles.dayTextDisabled,
                       selected && styles.dayTextSelected,
                     ]}
+                    maxFontSizeMultiplier={CONSTRAINED_FONT_SCALE}
                   >
                     {day.getDate()}
                   </Text>

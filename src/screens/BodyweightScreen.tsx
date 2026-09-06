@@ -19,6 +19,7 @@ import {
 import type { BodyweightEntry } from "../storage/bodyweight";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
 import LineChart from "../components/LineChart";
+import { a11yButton, a11yHeader } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -69,7 +70,9 @@ const BodyweightScreen = (_props: Props) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Bodyweight</Text>
+      <Text style={styles.title} {...a11yHeader}>
+        Bodyweight
+      </Text>
 
       <View style={styles.logRow}>
         <TextInput
@@ -79,8 +82,13 @@ const BodyweightScreen = (_props: Props) => {
           placeholder={`Weight (${unit})`}
           placeholderTextColor={colors.textFaint}
           keyboardType="decimal-pad"
+          accessibilityLabel={`Bodyweight in ${unit}`}
         />
-        <Pressable style={styles.logButton} onPress={handleLog}>
+        <Pressable
+          style={styles.logButton}
+          onPress={handleLog}
+          {...a11yButton("Log bodyweight")}
+        >
           <Text style={styles.logButtonText}>Log</Text>
         </Pressable>
       </View>
@@ -91,7 +99,9 @@ const BodyweightScreen = (_props: Props) => {
         </Text>
       ) : (
         <>
-          <Text style={styles.sectionTitle}>Weight over time</Text>
+          <Text style={styles.sectionTitle} {...a11yHeader}>
+            Weight over time
+          </Text>
           <LineChart
             height={CHART_HEIGHT}
             unit={unit}
@@ -104,7 +114,9 @@ const BodyweightScreen = (_props: Props) => {
             }))}
           />
 
-          <Text style={styles.sectionTitle}>History</Text>
+          <Text style={styles.sectionTitle} {...a11yHeader}>
+            History
+          </Text>
           {[...entries].reverse().map((entry) => (
             <View key={entry.id} style={styles.historyRow}>
               <Text style={styles.historyDate}>{formatDate(entry.date)}</Text>
@@ -112,7 +124,13 @@ const BodyweightScreen = (_props: Props) => {
                 <Text style={styles.historyWeight}>
                   {entry.weight} {unit}
                 </Text>
-                <Pressable onPress={() => handleDelete(entry.id)} hitSlop={8}>
+                <Pressable
+                  onPress={() => handleDelete(entry.id)}
+                  hitSlop={8}
+                  {...a11yButton(
+                    `Delete entry: ${formatDate(entry.date)}, ${entry.weight} ${unit}`,
+                  )}
+                >
                   <Text style={styles.historyDeleteText}>✕</Text>
                 </Pressable>
               </View>

@@ -89,9 +89,26 @@ const LineChart = ({
 
   const selected = selectedIndex !== null ? points[selectedIndex] : null;
 
+  const first = points[0];
+  const last = points[points.length - 1];
+  const chartSummary =
+    `Line chart, ${points.length} point${points.length === 1 ? "" : "s"}. ` +
+    `From ${formatValue(first.y)} ${unit} (${first.fullLabel}) to ` +
+    `${formatValue(last.y)} ${unit} (${last.fullLabel}). ` +
+    `Lowest ${formatValue(minY)}, highest ${formatValue(maxY)} ${unit}.`;
+
   return (
     <View>
-      <View style={styles.tooltipSlot}>
+      <View
+        style={styles.tooltipSlot}
+        accessibilityLiveRegion="polite"
+        accessible
+        accessibilityLabel={
+          selected
+            ? `${formatValue(selected.y)} ${unit}, ${selected.fullLabel}`
+            : "Tap a point to see its value"
+        }
+      >
         {selected ? (
           <>
             <Text style={styles.tooltipValue}>
@@ -103,7 +120,12 @@ const LineChart = ({
           <Text style={styles.tooltipHint}>Tap a point to see its value</Text>
         )}
       </View>
-      <View onLayout={onLayout}>
+      <View
+        onLayout={onLayout}
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={chartSummary}
+      >
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <Svg width={svgWidth} height={height}>
             <Line

@@ -16,6 +16,7 @@ import {
   resolveTrackingMode,
 } from '../utils/workout';
 import { getDistanceUnit, DistanceUnit } from '../storage/settings';
+import { a11yButton, a11yHeader } from '../utils/a11y';
 import { useTheme } from '../theme/ThemeContext';
 import type { ColorTokens } from '../theme/colors';
 import { radius, shadow } from '../theme/tokens';
@@ -75,7 +76,9 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{plan.name}</Text>
+      <Text style={styles.title} {...a11yHeader}>
+        {plan.name}
+      </Text>
 
       {plan.exercises.length === 0 ? (
         <Text style={styles.emptyText}>No exercises in this plan.</Text>
@@ -101,6 +104,13 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
                     exerciseName: exercise.name || 'Untitled',
                   })
                 }
+                {...a11yButton(
+                  `${exercise.name || 'Untitled'}, ${formatExerciseMeta(
+                    exercise,
+                    distanceUnit,
+                  )}`,
+                  'View progress',
+                )}
               >
                 <Text style={styles.exerciseName}>{exercise.name || 'Untitled'}</Text>
                 <Text style={styles.exerciseMeta}>
@@ -116,6 +126,8 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
         style={styles.startButton}
         onPress={handleStartWorkout}
         disabled={plan.exercises.length === 0}
+        {...a11yButton(`Start workout: ${plan.name}`)}
+        accessibilityState={{ disabled: plan.exercises.length === 0 }}
       >
         <Text style={styles.startButtonText}>Start Workout</Text>
       </Pressable>
@@ -124,15 +136,22 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
         <Pressable
           style={styles.editButton}
           onPress={() => navigation.navigate('PlanForm', { planId: plan.id })}
+          {...a11yButton(`Edit ${plan.name}`)}
         >
           <Text style={styles.editButtonText}>Edit</Text>
         </Pressable>
-        <Pressable style={styles.deleteButton} onPress={handleDelete}>
+        <Pressable
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          {...a11yButton(`Delete ${plan.name}`)}
+        >
           <Text style={styles.deleteButtonText}>Delete</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.historyTitle}>History</Text>
+      <Text style={styles.historyTitle} {...a11yHeader}>
+        History
+      </Text>
       {workouts.length === 0 ? (
         <Text style={styles.emptyText}>No workouts logged yet.</Text>
       ) : (
@@ -141,6 +160,13 @@ const PlanDetailScreen = ({ route, navigation }: Props) => {
             key={workout.id}
             style={styles.workoutRow}
             onPress={() => navigation.navigate('WorkoutSession', { workoutId: workout.id })}
+            {...a11yButton(
+              `${formatDate(workout.startedAt)}, ${countLoggedSets(
+                workout,
+              )} of ${countTotalSets(workout)} sets logged, ${
+                workout.completedAt ? 'completed' : 'in progress'
+              }`,
+            )}
           >
             <Text style={styles.workoutDate}>{formatDate(workout.startedAt)}</Text>
             <Text style={styles.workoutMeta}>

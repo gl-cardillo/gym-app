@@ -27,6 +27,7 @@ import {
 } from "../storage/exerciseLibrary";
 import { TRACKING_MODES, TrackingMode } from "../types";
 import { resolveTrackingMode } from "../utils/workout";
+import { a11yButton, a11yOption } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius } from "../theme/tokens";
@@ -163,6 +164,7 @@ const ExerciseLibraryScreen = (_props: Props) => {
           placeholder="Search exercises"
           placeholderTextColor={colors.textFaint}
           autoCorrect={false}
+          accessibilityLabel="Search exercises"
         />
 
         {library.length === 0 ? (
@@ -182,6 +184,13 @@ const ExerciseLibraryScreen = (_props: Props) => {
                 <Pressable
                   style={styles.cardHeader}
                   onPress={() => openRow(entry)}
+                  {...a11yButton(
+                    `${entry.name}, ${entry.muscleGroup ?? "untagged"}, ${modeLabel(
+                      mode,
+                    )}, ${usageText(usage[entry.id])}`,
+                    isExpanded ? "Collapse" : "Expand to edit",
+                  )}
+                  accessibilityState={{ expanded: isExpanded }}
                 >
                   <View style={styles.cardHeaderMain}>
                     <Text style={styles.exerciseName}>{entry.name}</Text>
@@ -204,6 +213,7 @@ const ExerciseLibraryScreen = (_props: Props) => {
                         placeholder="Exercise name"
                         placeholderTextColor={colors.textFaint}
                         autoCorrect={false}
+                        accessibilityLabel="Exercise name"
                       />
                       <Pressable
                         style={[
@@ -216,6 +226,7 @@ const ExerciseLibraryScreen = (_props: Props) => {
                         disabled={
                           !renameText.trim() || renameText.trim() === entry.name
                         }
+                        {...a11yButton("Save name")}
                       >
                         <Text style={styles.renameButtonText}>Save</Text>
                       </Pressable>
@@ -231,6 +242,7 @@ const ExerciseLibraryScreen = (_props: Props) => {
                             entry.muscleGroup === group && styles.chipActive,
                           ]}
                           onPress={() => handleMuscleGroup(entry, group)}
+                          {...a11yOption(entry.muscleGroup === group, group)}
                         >
                           <Text
                             style={[
@@ -257,6 +269,7 @@ const ExerciseLibraryScreen = (_props: Props) => {
                           onPress={() =>
                             handleTrackingMode(entry, option.value)
                           }
+                          {...a11yOption(mode === option.value, option.label)}
                         >
                           <Text
                             style={[
@@ -279,6 +292,8 @@ const ExerciseLibraryScreen = (_props: Props) => {
                         <Pressable
                           style={styles.secondaryButton}
                           onPress={() => setMergePickerOpen((v) => !v)}
+                          {...a11yButton()}
+                          accessibilityState={{ expanded: mergePickerOpen }}
                         >
                           <Text style={styles.secondaryButtonText}>
                             {mergePickerOpen ? "Cancel merge" : "Merge into…"}
@@ -291,6 +306,9 @@ const ExerciseLibraryScreen = (_props: Props) => {
                                 key={target.id}
                                 style={styles.mergeRow}
                                 onPress={() => handleMerge(entry, target)}
+                                {...a11yButton(
+                                  `Merge ${entry.name} into ${target.name}`,
+                                )}
                               >
                                 <Text style={styles.mergeRowText}>
                                   {target.name}
@@ -308,6 +326,7 @@ const ExerciseLibraryScreen = (_props: Props) => {
                     <Pressable
                       style={styles.deleteButton}
                       onPress={() => handleDelete(entry)}
+                      {...a11yButton(`Delete ${entry.name} from library`)}
                     >
                       <Text style={styles.deleteButtonText}>
                         Delete from library

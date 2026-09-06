@@ -79,7 +79,20 @@ const MuscleRecoveryScreen = (_props: Props) => {
             const metTarget = row.sessionsThisWeek >= WEEKLY_SESSION_TARGET;
             const setsDelta = row.setsThisWeek - row.setsLastWeek;
             return (
-              <View key={row.muscleGroup} style={styles.card}>
+              <View
+                key={row.muscleGroup}
+                style={styles.card}
+                accessible
+                accessibilityLabel={`${row.muscleGroup}: ${status.label}. ${
+                  row.lastTrainedAt
+                    ? `Last trained ${formatDate(row.lastTrainedAt)}`
+                    : "Never trained"
+                }. ${row.setsThisWeek} sets this week, ${
+                  row.sessionsThisWeek
+                } of ${WEEKLY_SESSION_TARGET} sessions, ${
+                  metTarget ? "target met" : "below target"
+                }`}
+              >
                 <View style={styles.cardHeader}>
                   <Text style={styles.groupName}>{row.muscleGroup}</Text>
                   <Text

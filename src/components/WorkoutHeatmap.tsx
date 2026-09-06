@@ -5,6 +5,7 @@ import { computeDashboardStats, startOfWeek } from "../utils/stats";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
+import { a11yHeader } from "../utils/a11y";
 
 const WEEKS_TO_SHOW = 16;
 const CELL_SIZE = 14;
@@ -59,16 +60,34 @@ const WorkoutHeatmap = ({ workouts }: Props) => {
     return colors.primary;
   };
 
+  const activeDays = useMemo(
+    () =>
+      weeks.reduce(
+        (total, week) => total + week.filter((day) => day.count > 0).length,
+        0,
+      ),
+    [weeks],
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Consistency</Text>
+        <Text style={styles.title} {...a11yHeader}>
+          Consistency
+        </Text>
         {streakWeeks > 0 && (
           <Text style={styles.streakText}>🔥 {streakWeeks}w streak</Text>
         )}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.grid}>
+        <View
+          style={styles.grid}
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={`Workout consistency over the last ${WEEKS_TO_SHOW} weeks: ${activeDays} day${
+            activeDays === 1 ? "" : "s"
+          } trained${streakWeeks > 0 ? `, ${streakWeeks}-week streak` : ""}.`}
+        >
           {weeks.map((week, weekIndex) => (
             <View key={weekIndex} style={styles.weekColumn}>
               {week.map((day) => (

@@ -48,11 +48,6 @@ const saveLibrary = async (entries: LibraryExercise[]): Promise<void> => {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 };
 
-/**
- * Looks up (or creates) the library entry for a name, keyed by the same
- * slug id used for exerciseId elsewhere, so plans/workouts and the library
- * always agree on identity for a given name.
- */
 export const upsertLibraryExercise = async (
   name: string,
   muscleGroup: MuscleGroup | null = null,

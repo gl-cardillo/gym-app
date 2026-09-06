@@ -11,6 +11,7 @@ import {
   WeightUnit,
 } from "../storage/settings";
 import { formatDuration } from "../utils/workout";
+import { a11yButton, a11yLink } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -110,6 +111,7 @@ const RecordsScreen = ({ navigation }: Props) => {
         <Pressable
           style={styles.trendsLink}
           onPress={() => navigation.navigate("Goals")}
+          {...a11yLink("Goals and targets")}
         >
           <Text style={styles.trendsLinkText}>Goals & targets</Text>
           <Text style={styles.trendsLinkChevron}>›</Text>
@@ -118,6 +120,7 @@ const RecordsScreen = ({ navigation }: Props) => {
         <Pressable
           style={styles.trendsLink}
           onPress={() => navigation.navigate("Trends")}
+          {...a11yLink("Volume and training trends")}
         >
           <Text style={styles.trendsLinkText}>Volume & training trends</Text>
           <Text style={styles.trendsLinkChevron}>›</Text>
@@ -126,6 +129,7 @@ const RecordsScreen = ({ navigation }: Props) => {
         <Pressable
           style={styles.trendsLink}
           onPress={() => navigation.navigate("MuscleRecovery")}
+          {...a11yLink("Muscle recovery and frequency")}
         >
           <Text style={styles.trendsLinkText}>Muscle recovery & frequency</Text>
           <Text style={styles.trendsLinkChevron}>›</Text>
@@ -134,6 +138,7 @@ const RecordsScreen = ({ navigation }: Props) => {
         <Pressable
           style={styles.trendsLink}
           onPress={() => navigation.navigate("Bodyweight")}
+          {...a11yLink("Bodyweight log")}
         >
           <Text style={styles.trendsLinkText}>Bodyweight log</Text>
           <Text style={styles.trendsLinkChevron}>›</Text>
@@ -142,6 +147,7 @@ const RecordsScreen = ({ navigation }: Props) => {
         <Pressable
           style={styles.trendsLink}
           onPress={() => navigation.navigate("Measurements")}
+          {...a11yLink("Body measurements")}
         >
           <Text style={styles.trendsLinkText}>Body measurements</Text>
           <Text style={styles.trendsLinkChevron}>›</Text>
@@ -165,6 +171,14 @@ const RecordsScreen = ({ navigation }: Props) => {
                     exerciseName: record.exerciseName,
                   })
                 }
+                {...a11yButton(
+                  `${record.exerciseName}. ${cells
+                    .map(
+                      (c) => `${c.label} ${c.value}, ${formatDate(c.date)}`,
+                    )
+                    .join(". ")}`,
+                  "View progress",
+                )}
               >
                 <Text style={styles.exerciseName}>{record.exerciseName}</Text>
                 <View style={styles.statsRow}>

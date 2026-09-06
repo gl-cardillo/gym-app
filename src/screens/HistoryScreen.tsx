@@ -18,6 +18,7 @@ import type { Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
+import { a11yButton, a11yLink, a11yOption } from "../utils/a11y";
 import WorkoutHeatmap from "../components/WorkoutHeatmap";
 
 type Props = TabScreenProps<"History">;
@@ -136,6 +137,7 @@ const HistoryScreen = ({ navigation }: Props) => {
           <Pressable
             style={styles.calendarLink}
             onPress={() => navigation.navigate("Calendar")}
+            {...a11yLink("Open month calendar")}
           >
             <Text style={styles.calendarLinkText}>📅 Open month calendar</Text>
             <Text style={styles.calendarLinkChevron}>›</Text>
@@ -151,6 +153,7 @@ const HistoryScreen = ({ navigation }: Props) => {
               placeholder="Search exercise or plan"
               placeholderTextColor={colors.textFaint}
               autoCorrect={false}
+              accessibilityLabel="Search exercise or plan"
             />
 
             {planNames.length > 1 && (
@@ -165,6 +168,7 @@ const HistoryScreen = ({ navigation }: Props) => {
                     selectedPlan === null && styles.chipActive,
                   ]}
                   onPress={() => setSelectedPlan(null)}
+                  {...a11yOption(selectedPlan === null, "All plans")}
                 >
                   <Text
                     style={[
@@ -185,6 +189,7 @@ const HistoryScreen = ({ navigation }: Props) => {
                     onPress={() =>
                       setSelectedPlan((prev) => (prev === name ? null : name))
                     }
+                    {...a11yOption(selectedPlan === name, name)}
                   >
                     <Text
                       style={[
@@ -212,6 +217,7 @@ const HistoryScreen = ({ navigation }: Props) => {
                     dateRange === option.key && styles.chipActive,
                   ]}
                   onPress={() => setDateRange(option.key)}
+                  {...a11yOption(dateRange === option.key, option.label)}
                 >
                   <Text
                     style={[
@@ -230,7 +236,11 @@ const HistoryScreen = ({ navigation }: Props) => {
                 <Text style={styles.filterSummaryText}>
                   {filteredWorkouts.length} of {workouts.length} workouts
                 </Text>
-                <Pressable onPress={clearFilters} hitSlop={6}>
+                <Pressable
+                  onPress={clearFilters}
+                  hitSlop={6}
+                  {...a11yButton("Clear filters")}
+                >
                   <Text style={styles.clearFiltersText}>Clear filters</Text>
                 </Pressable>
               </View>
@@ -254,6 +264,17 @@ const HistoryScreen = ({ navigation }: Props) => {
                       workoutId: workout.id,
                     })
                   }
+                  {...a11yButton(
+                    `${workout.planName}${
+                      workout.completedAt ? "" : ", in progress"
+                    }, ${formatDate(workout.startedAt)}, ${countLoggedSets(
+                      workout,
+                    )} of ${countTotalSets(workout)} sets logged${
+                      volume > 0
+                        ? `, ${volume.toLocaleString()} ${unit} volume`
+                        : ""
+                    }`,
+                  )}
                 >
                   <View style={styles.workoutRowHeader}>
                     <Text style={styles.workoutPlan}>{workout.planName}</Text>
@@ -280,6 +301,9 @@ const HistoryScreen = ({ navigation }: Props) => {
                   style={styles.deleteButton}
                   onPress={() => handleDelete(workout)}
                   hitSlop={8}
+                  {...a11yButton(
+                    `Delete ${formatDate(workout.startedAt)} ${workout.planName} workout`,
+                  )}
                 >
                   <Text style={styles.deleteButtonText}>✕</Text>
                 </Pressable>

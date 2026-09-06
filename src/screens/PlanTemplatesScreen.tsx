@@ -15,6 +15,7 @@ import { getPlans } from "../storage/plans";
 import { applyPlanTemplate } from "../utils/applyTemplate";
 import { resolveTrackingMode } from "../utils/workout";
 import { PLAN_TEMPLATES, type PlanTemplate } from "../data/planTemplates";
+import { a11yButton } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -115,6 +116,11 @@ const PlanTemplatesScreen = ({ navigation }: Props) => {
                     prev === template.id ? null : template.id,
                   )
                 }
+                {...a11yButton(
+                  `${template.name}. ${template.description}. ${template.frequency}, ${template.days.length} plans`,
+                  expanded ? "Collapse" : "Expand for details",
+                )}
+                accessibilityState={{ expanded }}
               >
                 <View style={styles.cardHeaderText}>
                   <Text style={styles.cardTitle}>{template.name}</Text>
@@ -158,6 +164,10 @@ const PlanTemplatesScreen = ({ navigation }: Props) => {
                 ]}
                 onPress={() => handleAdd(template)}
                 disabled={busyId === template.id}
+                {...a11yButton(
+                  `Add ${template.days.length} plans from ${template.name}`,
+                )}
+                accessibilityState={{ disabled: busyId === template.id }}
               >
                 <Text style={styles.addButtonText}>
                   {busyId === template.id

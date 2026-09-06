@@ -19,6 +19,7 @@ import {
 import { resolveTodaysWorkout, type TodaysWorkout } from "../utils/schedule";
 import { getDeloadModifier, getMesoWeekInfo } from "../utils/mesocycle";
 import { createEmptyWorkout, createWorkoutFromPlan } from "../utils/workout";
+import { a11yButton, a11yHeader, a11yLink } from "../utils/a11y";
 import type { Plan, Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
@@ -105,10 +106,13 @@ const DashboardScreen = ({ navigation }: Props) => {
         {todays.kind === "plan" ? (
           <View style={styles.todayCard}>
             <View style={styles.todayHeaderRow}>
-              <Text style={styles.todayHeading}>{todays.heading}</Text>
+              <Text style={styles.todayHeading} {...a11yHeader}>
+                {todays.heading}
+              </Text>
               <Pressable
                 onPress={() => navigation.navigate("Schedule")}
                 hitSlop={8}
+                {...a11yLink("Edit schedule")}
               >
                 <Text style={styles.todayEditLink}>Edit schedule</Text>
               </Pressable>
@@ -130,6 +134,7 @@ const DashboardScreen = ({ navigation }: Props) => {
             <Pressable
               style={styles.todayStartButton}
               onPress={() => handleStartPlan(todays.plan)}
+              {...a11yButton(`Start workout: ${todays.plan.name}`)}
             >
               <Text style={styles.todayStartButtonText}>Start Workout</Text>
             </Pressable>
@@ -138,6 +143,10 @@ const DashboardScreen = ({ navigation }: Props) => {
           <Pressable
             style={styles.restCard}
             onPress={() => navigation.navigate("Schedule")}
+            {...a11yButton(
+              "Rest day",
+              "Nothing scheduled today. Opens your schedule.",
+            )}
           >
             <Text style={styles.restHeading}>{todays.heading}</Text>
             <Text style={styles.restMeta}>
@@ -148,6 +157,10 @@ const DashboardScreen = ({ navigation }: Props) => {
           <Pressable
             style={styles.planWeekCard}
             onPress={() => navigation.navigate("Schedule")}
+            {...a11yButton(
+              "Plan your week",
+              "Pin plans to weekdays or set a rotation",
+            )}
           >
             <Text style={styles.planWeekText}>Plan your week →</Text>
             <Text style={styles.planWeekMeta}>
@@ -157,19 +170,35 @@ const DashboardScreen = ({ navigation }: Props) => {
         ) : null}
 
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
+          <View
+            style={styles.statCard}
+            accessible
+            accessibilityLabel={`${stats.totalWorkouts} total workouts`}
+          >
             <Text style={styles.statValue}>{stats.totalWorkouts}</Text>
             <Text style={styles.statLabel}>Total workouts</Text>
           </View>
-          <View style={styles.statCard}>
+          <View
+            style={styles.statCard}
+            accessible
+            accessibilityLabel={`${stats.currentStreakWeeks} week streak`}
+          >
             <Text style={styles.statValue}>{stats.currentStreakWeeks}</Text>
             <Text style={styles.statLabel}>Week streak</Text>
           </View>
-          <View style={styles.statCard}>
+          <View
+            style={styles.statCard}
+            accessible
+            accessibilityLabel={`${stats.workoutsThisWeek} workouts this week`}
+          >
             <Text style={styles.statValue}>{stats.workoutsThisWeek}</Text>
             <Text style={styles.statLabel}>This week</Text>
           </View>
-          <View style={styles.statCard}>
+          <View
+            style={styles.statCard}
+            accessible
+            accessibilityLabel={`${stats.prsThisWeek} PRs this week`}
+          >
             <Text style={styles.statValue}>{stats.prsThisWeek}</Text>
             <Text style={styles.statLabel}>PRs this week</Text>
           </View>
@@ -187,6 +216,9 @@ const DashboardScreen = ({ navigation }: Props) => {
                 workoutId: stats.inProgressWorkout!.id,
               })
             }
+            {...a11yButton(
+              `Continue workout: ${stats.inProgressWorkout.planName}`,
+            )}
           >
             <Text style={styles.continueTitle}>Continue workout</Text>
             <Text style={styles.continueMeta}>
@@ -195,7 +227,9 @@ const DashboardScreen = ({ navigation }: Props) => {
           </Pressable>
         )}
 
-        <Text style={styles.sectionTitle}>Last workout</Text>
+        <Text style={styles.sectionTitle} {...a11yHeader}>
+          Last workout
+        </Text>
         {stats.lastCompletedWorkout ? (
           <Pressable
             style={styles.lastWorkoutCard}
@@ -204,6 +238,11 @@ const DashboardScreen = ({ navigation }: Props) => {
                 workoutId: stats.lastCompletedWorkout!.id,
               })
             }
+            {...a11yButton(
+              `Last workout: ${stats.lastCompletedWorkout.planName}, ${formatDate(
+                stats.lastCompletedWorkout.completedAt as string,
+              )}`,
+            )}
           >
             <Text style={styles.lastWorkoutPlan}>
               {stats.lastCompletedWorkout.planName}
@@ -219,6 +258,7 @@ const DashboardScreen = ({ navigation }: Props) => {
         <Pressable
           style={styles.quickWorkoutButton}
           onPress={handleQuickWorkout}
+          {...a11yButton("Quick workout", "Start a blank workout")}
         >
           <Text style={styles.quickWorkoutButtonText}>+ Quick Workout</Text>
         </Pressable>

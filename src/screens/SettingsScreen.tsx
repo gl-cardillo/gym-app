@@ -38,6 +38,7 @@ import {
   shareBackupFile,
 } from "../storage/backup";
 import { getLastBackupAt } from "../storage/settings";
+import { a11yButton, a11yHeader, a11yLink, a11yOption } from "../utils/a11y";
 import {
   DEFAULT_TRAINING_REMINDER,
   getTrainingReminder,
@@ -210,10 +211,13 @@ const SettingsScreen = ({ navigation }: Props) => {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Training</Text>
+        <Text style={styles.sectionTitle} {...a11yHeader}>
+          Training
+        </Text>
         <Pressable
           style={styles.navRow}
           onPress={() => navigation.navigate("Schedule")}
+          {...a11yLink("Weekly Schedule")}
         >
           <Text style={styles.navRowText}>Weekly Schedule</Text>
           <Text style={styles.navRowChevron}>›</Text>
@@ -221,6 +225,7 @@ const SettingsScreen = ({ navigation }: Props) => {
         <Pressable
           style={[styles.navRow, styles.navRowStacked]}
           onPress={() => navigation.navigate("Mesocycle")}
+          {...a11yLink("Mesocycle and deload plan")}
         >
           <Text style={styles.navRowText}>Mesocycle / Deload Plan</Text>
           <Text style={styles.navRowChevron}>›</Text>
@@ -228,18 +233,22 @@ const SettingsScreen = ({ navigation }: Props) => {
         <Pressable
           style={[styles.navRow, styles.navRowStacked]}
           onPress={() => navigation.navigate("ExerciseLibrary")}
+          {...a11yLink("Manage exercise library")}
         >
           <Text style={styles.navRowText}>Manage Exercise Library</Text>
           <Text style={styles.navRowChevron}>›</Text>
         </Pressable>
 
-        <Text style={styles.sectionTitle}>Units</Text>
+        <Text style={styles.sectionTitle} {...a11yHeader}>
+          Units
+        </Text>
         <View style={styles.segmentedRow}>
           {(["lbs", "kg"] as WeightUnit[]).map((option) => (
             <Pressable
               key={option}
               style={[styles.segment, unit === option && styles.segmentActive]}
               onPress={() => toggleUnit(option)}
+              {...a11yOption(unit === option, `Weight unit ${option}`)}
             >
               <Text
                 style={[
@@ -253,7 +262,9 @@ const SettingsScreen = ({ navigation }: Props) => {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Measurement Units</Text>
+        <Text style={styles.sectionTitle} {...a11yHeader}>
+          Measurement Units
+        </Text>
         <View style={styles.segmentedRow}>
           {(["in", "cm"] as LengthUnit[]).map((option) => (
             <Pressable
@@ -263,6 +274,7 @@ const SettingsScreen = ({ navigation }: Props) => {
                 lengthUnit === option && styles.segmentActive,
               ]}
               onPress={() => toggleLengthUnit(option)}
+              {...a11yOption(lengthUnit === option, `Measurement unit ${option}`)}
             >
               <Text
                 style={[
@@ -276,7 +288,9 @@ const SettingsScreen = ({ navigation }: Props) => {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Distance Units</Text>
+        <Text style={styles.sectionTitle} {...a11yHeader}>
+          Distance Units
+        </Text>
         <View style={styles.segmentedRow}>
           {(["mi", "km"] as DistanceUnit[]).map((option) => (
             <Pressable
@@ -286,6 +300,7 @@ const SettingsScreen = ({ navigation }: Props) => {
                 distanceUnit === option && styles.segmentActive,
               ]}
               onPress={() => toggleDistanceUnit(option)}
+              {...a11yOption(distanceUnit === option, `Distance unit ${option}`)}
             >
               <Text
                 style={[
@@ -299,7 +314,9 @@ const SettingsScreen = ({ navigation }: Props) => {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Appearance</Text>
+        <Text style={styles.sectionTitle} {...a11yHeader}>
+          Appearance
+        </Text>
         <View style={styles.segmentedRow}>
           {THEME_OPTIONS.map((option) => (
             <Pressable
@@ -309,6 +326,7 @@ const SettingsScreen = ({ navigation }: Props) => {
                 mode === option.value && styles.segmentActive,
               ]}
               onPress={() => setMode(option.value)}
+              {...a11yOption(mode === option.value, `${option.label} theme`)}
             >
               <Text
                 style={[
@@ -322,7 +340,9 @@ const SettingsScreen = ({ navigation }: Props) => {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Reminders</Text>
+        <Text style={styles.sectionTitle} {...a11yHeader}>
+          Reminders
+        </Text>
         <View style={styles.switchRow}>
           <View style={styles.switchTextWrap}>
             <Text style={styles.switchLabel}>Rest day reminder</Text>
@@ -334,12 +354,15 @@ const SettingsScreen = ({ navigation }: Props) => {
             value={reminder.enabled}
             onValueChange={toggleReminder}
             trackColor={{ true: colors.primary, false: colors.borderMuted }}
+            accessibilityLabel="Rest day reminder"
           />
         </View>
 
         {reminder.enabled && (
           <>
-            <Text style={styles.reminderSubLabel}>Remind me after</Text>
+            <Text style={styles.reminderSubLabel} {...a11yHeader}>
+              Remind me after
+            </Text>
             <View style={styles.segmentedRow}>
               {IDLE_DAY_OPTIONS.map((days) => (
                 <Pressable
@@ -349,6 +372,10 @@ const SettingsScreen = ({ navigation }: Props) => {
                     reminder.idleDays === days && styles.segmentActive,
                   ]}
                   onPress={() => applyReminder({ ...reminder, idleDays: days })}
+                  {...a11yOption(
+                    reminder.idleDays === days,
+                    `${days} day${days === 1 ? "" : "s"}`,
+                  )}
                 >
                   <Text
                     style={[
@@ -362,7 +389,9 @@ const SettingsScreen = ({ navigation }: Props) => {
               ))}
             </View>
 
-            <Text style={styles.reminderSubLabel}>At</Text>
+            <Text style={styles.reminderSubLabel} {...a11yHeader}>
+              At
+            </Text>
             <View style={styles.segmentedRow}>
               {REMINDER_TIME_OPTIONS.map((option) => {
                 const active =
@@ -379,6 +408,7 @@ const SettingsScreen = ({ navigation }: Props) => {
                         minute: option.minute,
                       })
                     }
+                    {...a11yOption(active, option.label)}
                   >
                     <Text
                       style={[
@@ -395,7 +425,9 @@ const SettingsScreen = ({ navigation }: Props) => {
           </>
         )}
 
-        <Text style={styles.sectionTitle}>Backup</Text>
+        <Text style={styles.sectionTitle} {...a11yHeader}>
+          Backup
+        </Text>
         <Text style={styles.helperText}>
           Your data lives only on this device. Save a backup file regularly so a
           lost or reset phone doesn't take your training history with it.
@@ -404,6 +436,8 @@ const SettingsScreen = ({ navigation }: Props) => {
           style={[styles.primaryButton, isExporting && styles.buttonDisabled]}
           onPress={handleExport}
           disabled={isExporting}
+          {...a11yButton("Save backup file")}
+          accessibilityState={{ disabled: isExporting }}
         >
           <Text style={styles.primaryButtonText}>
             {isExporting ? "Preparing…" : "Save Backup File"}
@@ -423,6 +457,8 @@ const SettingsScreen = ({ navigation }: Props) => {
           ]}
           onPress={handleRestoreFromFile}
           disabled={isImporting}
+          {...a11yButton("Restore from file")}
+          accessibilityState={{ disabled: isImporting }}
         >
           <Text style={styles.secondaryButtonText}>
             {isImporting ? "Restoring…" : "Restore From File"}
@@ -442,6 +478,7 @@ const SettingsScreen = ({ navigation }: Props) => {
           numberOfLines={6}
           autoCapitalize="none"
           autoCorrect={false}
+          accessibilityLabel="Paste backup JSON"
         />
         <Pressable
           style={[
@@ -450,6 +487,8 @@ const SettingsScreen = ({ navigation }: Props) => {
           ]}
           onPress={handleImport}
           disabled={!importText.trim() || isImporting}
+          {...a11yButton("Restore pasted JSON")}
+          accessibilityState={{ disabled: !importText.trim() || isImporting }}
         >
           <Text style={styles.secondaryButtonText}>
             {isImporting ? "Restoring…" : "Restore Pasted JSON"}

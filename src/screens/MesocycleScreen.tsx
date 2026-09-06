@@ -20,6 +20,7 @@ import {
 import { getMesoWeekInfo } from "../utils/mesocycle";
 import { startOfWeek } from "../utils/stats";
 import DateTimePickerModal from "../components/DateTimePickerModal";
+import { a11yButton, a11yHeader, a11yOption } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -85,6 +86,7 @@ const MesocycleScreen = ({}: Props) => {
             value={mesocycle.enabled}
             onValueChange={toggleEnabled}
             trackColor={{ true: colors.primary, false: colors.borderMuted }}
+            accessibilityLabel="Enable mesocycle periodization"
           />
         </View>
 
@@ -120,7 +122,9 @@ const MesocycleScreen = ({}: Props) => {
               </View>
             )}
 
-            <Text style={styles.sectionLabel}>Block length</Text>
+            <Text style={styles.sectionLabel} {...a11yHeader}>
+              Block length
+            </Text>
             <View style={styles.chipRow}>
               {BLOCK_LENGTH_OPTIONS.map((weeks) => (
                 <Pressable
@@ -130,6 +134,10 @@ const MesocycleScreen = ({}: Props) => {
                     mesocycle.blockWeeks === weeks && styles.chipActive,
                   ]}
                   onPress={() => persist({ ...mesocycle, blockWeeks: weeks })}
+                  {...a11yOption(
+                    mesocycle.blockWeeks === weeks,
+                    `${weeks} weeks`,
+                  )}
                 >
                   <Text
                     style={[
@@ -146,7 +154,9 @@ const MesocycleScreen = ({}: Props) => {
               The last week of every block is the deload week.
             </Text>
 
-            <Text style={styles.sectionLabel}>Deload volume</Text>
+            <Text style={styles.sectionLabel} {...a11yHeader}>
+              Deload volume
+            </Text>
             <View style={styles.chipRow}>
               {VOLUME_OPTIONS.map((pct) => (
                 <Pressable
@@ -158,6 +168,10 @@ const MesocycleScreen = ({}: Props) => {
                   onPress={() =>
                     persist({ ...mesocycle, deloadVolumePct: pct })
                   }
+                  {...a11yOption(
+                    mesocycle.deloadVolumePct === pct,
+                    `${pct} percent of sets`,
+                  )}
                 >
                   <Text
                     style={[
@@ -172,7 +186,9 @@ const MesocycleScreen = ({}: Props) => {
               ))}
             </View>
 
-            <Text style={styles.sectionLabel}>Deload intensity</Text>
+            <Text style={styles.sectionLabel} {...a11yHeader}>
+              Deload intensity
+            </Text>
             <View style={styles.chipRow}>
               {INTENSITY_OPTIONS.map((pct) => (
                 <Pressable
@@ -184,6 +200,10 @@ const MesocycleScreen = ({}: Props) => {
                   onPress={() =>
                     persist({ ...mesocycle, deloadIntensityPct: pct })
                   }
+                  {...a11yOption(
+                    mesocycle.deloadIntensityPct === pct,
+                    `${pct} percent of weight`,
+                  )}
                 >
                   <Text
                     style={[
@@ -198,10 +218,16 @@ const MesocycleScreen = ({}: Props) => {
               ))}
             </View>
 
-            <Text style={styles.sectionLabel}>Block start</Text>
+            <Text style={styles.sectionLabel} {...a11yHeader}>
+              Block start
+            </Text>
             <Pressable
               style={styles.dateRow}
               onPress={() => setShowDatePicker(true)}
+              {...a11yButton(
+                `Block start: ${formatDate(mesocycle.startDate)}`,
+                "Change date",
+              )}
             >
               <Text style={styles.dateRowText}>
                 {formatDate(mesocycle.startDate)}

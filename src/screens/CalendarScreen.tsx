@@ -22,6 +22,7 @@ import {
   startOfMonth,
 } from "../utils/calendar";
 import MonthCalendar from "../components/MonthCalendar";
+import { a11yButton, a11yHeader } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -120,7 +121,9 @@ const CalendarScreen = ({ navigation }: Props) => {
           </Text>
         </View>
 
-        <Text style={styles.selectedLabel}>{selectedLabel}</Text>
+        <Text style={styles.selectedLabel} {...a11yHeader}>
+          {selectedLabel}
+        </Text>
 
         {selectedWorkouts.length === 0 ? (
           <Text style={styles.emptyText}>No workouts logged on this day.</Text>
@@ -136,6 +139,17 @@ const CalendarScreen = ({ navigation }: Props) => {
                     workoutId: workout.id,
                   })
                 }
+                {...a11yButton(
+                  `${workout.planName}${
+                    workout.completedAt ? "" : ", in progress"
+                  }, ${workout.exercises.length} exercise${
+                    workout.exercises.length === 1 ? "" : "s"
+                  }${
+                    volume > 0
+                      ? `, ${volume.toLocaleString()} ${unit} volume`
+                      : ""
+                  }`,
+                )}
               >
                 <View style={styles.workoutRowHeader}>
                   <Text style={styles.workoutPlan}>{workout.planName}</Text>
@@ -158,7 +172,11 @@ const CalendarScreen = ({ navigation }: Props) => {
         )}
 
         {!isFuture && (
-          <Pressable style={styles.logButton} onPress={handleLogWorkout}>
+          <Pressable
+            style={styles.logButton}
+            onPress={handleLogWorkout}
+            {...a11yButton(`Log a workout on ${selectedLabel}`)}
+          >
             <Text style={styles.logButtonText}>
               + Log a workout on {selectedDate.toLocaleDateString(undefined, {
                 month: "short",

@@ -4,6 +4,7 @@ import type { MuscleGroupVolume } from "../utils/stats";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
+import { a11yHeader, CONSTRAINED_FONT_SCALE } from "../utils/a11y";
 
 type Props = {
   data: MuscleGroupVolume[];
@@ -17,15 +18,28 @@ const MuscleGroupVolumeChart = ({ data, unit }: Props) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Muscle Volume</Text>
+      <Text style={styles.title} {...a11yHeader}>
+        Muscle Volume
+      </Text>
       <Text style={styles.subtitle}>This week</Text>
       {data.length === 0 ? (
         <Text style={styles.emptyText}>No sets logged this week yet.</Text>
       ) : (
         <View style={styles.rows}>
           {data.map((item) => (
-            <View key={item.muscleGroup} style={styles.row}>
-              <Text style={styles.label} numberOfLines={1}>
+            <View
+              key={item.muscleGroup}
+              style={styles.row}
+              accessible
+              accessibilityLabel={`${item.muscleGroup}: ${Math.round(
+                item.volume,
+              ).toLocaleString()} ${unit}`}
+            >
+              <Text
+                style={styles.label}
+                numberOfLines={1}
+                maxFontSizeMultiplier={CONSTRAINED_FONT_SCALE}
+              >
                 {item.muscleGroup}
               </Text>
               <View style={styles.barTrack}>
@@ -36,7 +50,10 @@ const MuscleGroupVolumeChart = ({ data, unit }: Props) => {
                   ]}
                 />
               </View>
-              <Text style={styles.value}>
+              <Text
+                style={styles.value}
+                maxFontSizeMultiplier={CONSTRAINED_FONT_SCALE}
+              >
                 {Math.round(item.volume).toLocaleString()} {unit}
               </Text>
             </View>

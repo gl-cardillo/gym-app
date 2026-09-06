@@ -17,6 +17,7 @@ import { DEFAULT_TRACKING_MODE, TRACKING_MODES, TrackingMode } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius } from "../theme/tokens";
+import { a11yButton, a11yOption } from "../utils/a11y";
 
 type Props = {
   value: string;
@@ -89,6 +90,7 @@ const ExerciseNameField = ({
         placeholder={placeholder}
         placeholderTextColor={colors.textFaint}
         autoFocus={autoFocus}
+        accessibilityLabel={placeholder}
       />
       {showSuggestions && (
         <View style={styles.suggestions}>
@@ -97,6 +99,12 @@ const ExerciseNameField = ({
               key={entry.id}
               style={styles.suggestionRow}
               onPress={() => handleSelect(entry)}
+              {...a11yButton(
+                entry.muscleGroup
+                  ? `${entry.name}, ${entry.muscleGroup}`
+                  : entry.name,
+                "Fill in this exercise",
+              )}
             >
               <Text style={styles.suggestionName}>{entry.name}</Text>
               {entry.muscleGroup && (
@@ -120,6 +128,7 @@ const ExerciseNameField = ({
                       key={option.value}
                       style={[styles.tagChip, active && styles.tagChipActive]}
                       onPress={() => onChangeTrackingMode(option.value)}
+                      {...a11yOption(active, option.label)}
                     >
                       <Text
                         style={[
@@ -144,6 +153,7 @@ const ExerciseNameField = ({
                 onPress={() =>
                   onChangeMuscleGroup(muscleGroup === group ? null : group)
                 }
+                {...a11yOption(muscleGroup === group, group)}
               >
                 <Text
                   style={[
