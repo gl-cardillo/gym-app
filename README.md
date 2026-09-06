@@ -34,7 +34,7 @@ data lives on the device via AsyncStorage: no account, no backend.
 ### Settings & data
 - Weight (lbs/kg), length (in/cm) and distance (mi/km) units  switching **converts stored data** automatically
 - Light / dark / system theme
-- **Backup**: JSON export via the share sheet, paste to restore import
+- **Backup**: save a dated `.json` backup file via the share sheet, restore by picking a file (or paste JSON manually); shows when you last backed up
 - Haptic feedback throughout
 
 ## Running

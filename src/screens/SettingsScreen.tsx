@@ -3,7 +3,6 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   Switch,
   Text,
@@ -33,7 +32,12 @@ import {
   setWeightUnit,
   WeightUnit,
 } from "../storage/settings";
-import { exportBackupJson, restoreBackupJson } from "../storage/backup";
+import {
+  restoreBackupFromFile,
+  restoreBackupJson,
+  shareBackupFile,
+} from "../storage/backup";
+import { getLastBackupAt } from "../storage/settings";
 import {
   DEFAULT_TRAINING_REMINDER,
   getTrainingReminder,
@@ -76,6 +80,8 @@ const SettingsScreen = ({ navigation }: Props) => {
   const [distanceUnit, setDistanceUnitState] = useState<DistanceUnit>("mi");
   const [importText, setImportText] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [lastBackupAt, setLastBackupAt] = useState<string | null>(null);
   const [reminder, setReminder] = useState<TrainingReminderSettings>(
     DEFAULT_TRAINING_REMINDER,
   );
@@ -86,6 +92,7 @@ const SettingsScreen = ({ navigation }: Props) => {
       getLengthUnit().then(setLengthUnitState);
       getDistanceUnit().then(setDistanceUnitState);
       getTrainingReminder().then(setReminder);
+      getLastBackupAt().then(setLastBackupAt);
     }, []),
   );
 
@@ -135,39 +142,52 @@ const SettingsScreen = ({ navigation }: Props) => {
   };
 
   const handleExport = async () => {
+    setIsExporting(true);
     try {
-      const json = await exportBackupJson();
-      await Share.share({ message: json, title: "Gym App Backup" });
+      const shared = await shareBackupFile();
+      if (!shared) {
+        Alert.alert(
+          "Sharing unavailable",
+          "This device can't open a share sheet. Try again from a different screen or use the paste-based export.",
+        );
+        return;
+      }
+      getLastBackupAt().then(setLastBackupAt);
     } catch {
       Alert.alert("Export failed", "Could not put together a backup file.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
-  const handleImport = () => {
-    if (!importText.trim()) return;
+  const afterRestore = (count: number) => {
+    setImportText("");
+    getWeightUnit().then(setUnit);
+    getTrainingReminder().then(setReminder);
+    refreshTrainingReminders();
     Alert.alert(
-      "Import backup",
+      "Restore complete",
+      `Restored ${count} record${count === 1 ? "" : "s"}.`,
+    );
+  };
+
+  const confirmRestore = (run: () => Promise<number | null>) => {
+    Alert.alert(
+      "Restore backup",
       "This will overwrite any current plans, workouts, bodyweight logs, and exercise library data that the backup contains. Continue?",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Import",
+          text: "Restore",
           style: "destructive",
           onPress: async () => {
             setIsImporting(true);
             try {
-              const count = await restoreBackupJson(importText);
-              setImportText("");
-              getWeightUnit().then(setUnit);
-              getTrainingReminder().then(setReminder);
-              refreshTrainingReminders();
-              Alert.alert(
-                "Import complete",
-                `Restored ${count} record${count === 1 ? "" : "s"}.`,
-              );
+              const count = await run();
+              if (count !== null) afterRestore(count);
             } catch (error) {
               Alert.alert(
-                "Import failed",
+                "Restore failed",
                 error instanceof Error ? error.message : "Unknown error.",
               );
             } finally {
@@ -177,6 +197,14 @@ const SettingsScreen = ({ navigation }: Props) => {
         },
       ],
     );
+  };
+
+  const handleRestoreFromFile = () =>
+    confirmRestore(() => restoreBackupFromFile());
+
+  const handleImport = () => {
+    if (!importText.trim()) return;
+    confirmRestore(() => restoreBackupJson(importText));
   };
 
   return (
@@ -369,15 +397,40 @@ const SettingsScreen = ({ navigation }: Props) => {
 
         <Text style={styles.sectionTitle}>Backup</Text>
         <Text style={styles.helperText}>
-          Export all your plans, workouts, bodyweight logs, body measurements,
-          and exercise library as a JSON file you can save or send to yourself.
+          Your data lives only on this device. Save a backup file regularly so a
+          lost or reset phone doesn't take your training history with it.
         </Text>
-        <Pressable style={styles.primaryButton} onPress={handleExport}>
-          <Text style={styles.primaryButtonText}>Export Data</Text>
+        <Pressable
+          style={[styles.primaryButton, isExporting && styles.buttonDisabled]}
+          onPress={handleExport}
+          disabled={isExporting}
+        >
+          <Text style={styles.primaryButtonText}>
+            {isExporting ? "Preparing…" : "Save Backup File"}
+          </Text>
+        </Pressable>
+        <Text style={styles.backupMeta}>
+          {lastBackupAt
+            ? `Last backup: ${new Date(lastBackupAt).toLocaleString()}`
+            : "No backup saved yet."}
+        </Text>
+
+        <Pressable
+          style={[
+            styles.secondaryButton,
+            styles.restoreButton,
+            isImporting && styles.buttonDisabled,
+          ]}
+          onPress={handleRestoreFromFile}
+          disabled={isImporting}
+        >
+          <Text style={styles.secondaryButtonText}>
+            {isImporting ? "Restoring…" : "Restore From File"}
+          </Text>
         </Pressable>
 
         <Text style={[styles.helperText, styles.importHelperText]}>
-          Paste a previously exported backup below to restore it.
+          Or paste backup JSON to restore it manually.
         </Text>
         <TextInput
           style={styles.importInput}
@@ -399,7 +452,7 @@ const SettingsScreen = ({ navigation }: Props) => {
           disabled={!importText.trim() || isImporting}
         >
           <Text style={styles.secondaryButtonText}>
-            {isImporting ? "Importing…" : "Import Data"}
+            {isImporting ? "Restoring…" : "Restore Pasted JSON"}
           </Text>
         </Pressable>
       </ScrollView>
@@ -454,7 +507,14 @@ const createStyles = (colors: ColorTokens) =>
     segmentText: { fontSize: 14, fontWeight: "600", color: colors.textMuted },
     segmentTextActive: { color: colors.onAccent },
     helperText: { color: colors.textMuted, fontSize: 13, lineHeight: 18 },
-    importHelperText: { marginTop: 20 },
+    importHelperText: { marginTop: 24 },
+    backupMeta: {
+      color: colors.textFaint,
+      fontSize: 12,
+      marginTop: 8,
+      textAlign: "center",
+    },
+    restoreButton: { marginTop: 16 },
     switchRow: {
       flexDirection: "row",
       alignItems: "center",

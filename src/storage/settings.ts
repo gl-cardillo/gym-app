@@ -6,6 +6,7 @@ const LENGTH_UNIT_STORAGE_KEY = "gym-app:settings:lengthUnit";
 const DISTANCE_UNIT_STORAGE_KEY = "gym-app:settings:distanceUnit";
 const BAR_WEIGHT_STORAGE_KEY = "gym-app:settings:barWeight";
 const REMINDER_STORAGE_KEY = "gym-app:settings:trainingReminder";
+const LAST_BACKUP_STORAGE_KEY = "gym-app:settings:lastBackupAt";
 
 export type WeightUnit = "lbs" | "kg";
 
@@ -126,6 +127,14 @@ export const setTrainingReminder = async (
   settings: TrainingReminderSettings,
 ): Promise<void> => {
   await AsyncStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(settings));
+};
+
+export const getLastBackupAt = async (): Promise<string | null> => {
+  return AsyncStorage.getItem(LAST_BACKUP_STORAGE_KEY);
+};
+
+export const setLastBackupAt = async (iso: string): Promise<void> => {
+  await AsyncStorage.setItem(LAST_BACKUP_STORAGE_KEY, iso);
 };
 
 export const convertStoredBarWeight = async (
