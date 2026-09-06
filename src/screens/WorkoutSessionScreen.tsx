@@ -39,6 +39,7 @@ import {
   estimateOneRepMax,
   exerciseIdForName,
   formatDuration,
+  formatOverloadSuggestion,
   generateWarmupSets,
   getOverloadSuggestion,
   groupByLinkedToNext,
@@ -682,9 +683,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                     if (!suggestion) return null;
                     return (
                       <Text style={styles.suggestionText}>
-                        {suggestion.hitTarget
-                          ? `Last: ${suggestion.lastWeight} ${unit} × ${suggestion.lastReps} · try ${suggestion.suggestedWeight} ${unit}`
-                          : `Last: ${suggestion.lastWeight} ${unit} × ${suggestion.lastReps} · aim for ${suggestion.targetReps} reps`}
+                        {formatOverloadSuggestion(suggestion, unit)}
                       </Text>
                     );
                   })()}
@@ -924,6 +923,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                               keyboardType="decimal-pad"
                             />
                           </View>
+
                           <TextInput
                             style={[styles.input, styles.noteInput]}
                             value={set.note}
@@ -1369,6 +1369,12 @@ const createStyles = (colors: ColorTokens) =>
       width: 32,
     },
     rpeInput: { width: 64 },
+    rpeHint: {
+      color: colors.textFaint,
+      fontSize: 11,
+      lineHeight: 15,
+      marginBottom: 10,
+    },
     noteInput: { minHeight: 40, textAlignVertical: "top" },
     setActionsRow: {
       flexDirection: "row",

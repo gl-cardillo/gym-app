@@ -33,12 +33,19 @@ export const formatDuration = (totalSeconds: number): string => {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 };
 
+export type RpeAdvice = "push" | "hold" | "backoff";
+
+const EASY_RPE = 7;
+const MAXED_RPE = 9.5;
+
 export type OverloadSuggestion = {
   lastWeight: number;
   lastReps: number;
   targetReps: number;
   suggestedWeight: number;
   hitTarget: boolean;
+  lastRpe: number | null;
+  rpeAdvice: RpeAdvice | null;
 };
 
 export const getOverloadSuggestion = (
@@ -65,17 +72,63 @@ export const getOverloadSuggestion = (
   const hitTarget = workingSets.every(
     (set) => (set.reps as number) >= targetReps,
   );
-  const suggestedWeight = hitTarget
-    ? Math.round(((topSet.weight as number) + WEIGHT_INCREMENT[unit]) * 10) / 10
-    : (topSet.weight as number);
+
+  const loggedRpes = workingSets
+    .map((set) => set.rpe)
+    .filter((rpe): rpe is number => typeof rpe === "number" && rpe > 0);
+  const lastRpe = loggedRpes.length > 0 ? Math.max(...loggedRpes) : null;
+
+  const increment = WEIGHT_INCREMENT[unit];
+  const round = (weight: number) => Math.round(weight * 10) / 10;
+  const base = topSet.weight as number;
+
+  let suggestedWeight = base;
+  let rpeAdvice: RpeAdvice | null = null;
+
+  if (hitTarget) {
+    if (lastRpe !== null && lastRpe <= EASY_RPE) {
+      suggestedWeight = round(base + increment * 2);
+      rpeAdvice = "push";
+    } else if (lastRpe !== null && lastRpe >= MAXED_RPE) {
+      suggestedWeight = base;
+      rpeAdvice = "hold";
+    } else {
+      suggestedWeight = round(base + increment);
+    }
+  } else if (lastRpe !== null && lastRpe >= MAXED_RPE) {
+    suggestedWeight = round(Math.max(increment, base - increment));
+    rpeAdvice = "backoff";
+  }
 
   return {
-    lastWeight: topSet.weight as number,
+    lastWeight: base,
     lastReps: topSet.reps as number,
     targetReps,
     suggestedWeight,
     hitTarget,
+    lastRpe,
+    rpeAdvice,
   };
+};
+
+export const formatOverloadSuggestion = (
+  s: OverloadSuggestion,
+  unit: WeightUnit,
+): string => {
+  const last = `Last: ${s.lastWeight} ${unit} × ${s.lastReps}`;
+  const rpe = s.lastRpe !== null ? ` @ RPE ${s.lastRpe}` : "";
+  switch (s.rpeAdvice) {
+    case "push":
+      return `${last}${rpe}, felt easy, jump to ${s.suggestedWeight} ${unit}`;
+    case "hold":
+      return `${last}${rpe}, near-maximal, hold ${s.suggestedWeight} ${unit} and add reps`;
+    case "backoff":
+      return `${last}${rpe}, missed reps at high RPE, drop to ${s.suggestedWeight} ${unit}`;
+    default:
+      return s.hitTarget
+        ? `${last}${rpe}, try ${s.suggestedWeight} ${unit}`
+        : `${last}${rpe}, aim for ${s.targetReps} reps`;
+  }
 };
 
 export const roundToIncrement = (weight: number, unit: WeightUnit): number => {
