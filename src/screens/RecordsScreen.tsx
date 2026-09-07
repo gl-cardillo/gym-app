@@ -119,6 +119,15 @@ const RecordsScreen = ({ navigation }: Props) => {
 
         <Pressable
           style={styles.trendsLink}
+          onPress={() => navigation.navigate("StrengthStandards")}
+          {...a11yLink("Strength standards")}
+        >
+          <Text style={styles.trendsLinkText}>Strength standards</Text>
+          <Text style={styles.trendsLinkChevron}>›</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.trendsLink}
           onPress={() => navigation.navigate("Trends")}
           {...a11yLink("Volume and training trends")}
         >

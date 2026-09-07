@@ -7,6 +7,7 @@ const DISTANCE_UNIT_STORAGE_KEY = "gym-app:settings:distanceUnit";
 const BAR_WEIGHT_STORAGE_KEY = "gym-app:settings:barWeight";
 const REMINDER_STORAGE_KEY = "gym-app:settings:trainingReminder";
 const LAST_BACKUP_STORAGE_KEY = "gym-app:settings:lastBackupAt";
+const LIFTER_SEX_STORAGE_KEY = "gym-app:settings:lifterSex";
 
 export type WeightUnit = "lbs" | "kg";
 
@@ -127,6 +128,19 @@ export const setTrainingReminder = async (
   settings: TrainingReminderSettings,
 ): Promise<void> => {
   await AsyncStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(settings));
+};
+
+export type LifterSex = "male" | "female";
+
+export const DEFAULT_LIFTER_SEX: LifterSex = "male";
+
+export const getLifterSex = async (): Promise<LifterSex> => {
+  const raw = await AsyncStorage.getItem(LIFTER_SEX_STORAGE_KEY);
+  return raw === "female" ? "female" : DEFAULT_LIFTER_SEX;
+};
+
+export const setLifterSex = async (sex: LifterSex): Promise<void> => {
+  await AsyncStorage.setItem(LIFTER_SEX_STORAGE_KEY, sex);
 };
 
 export const getLastBackupAt = async (): Promise<string | null> => {
