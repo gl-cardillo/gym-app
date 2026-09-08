@@ -10,6 +10,38 @@ export const TRACKING_MODES: { value: TrackingMode; label: string; hint: string 
     { value: "cardio", label: "Distance & time", hint: "Run, row, bike, swim" },
   ];
 
+export type ProgressionType = "double" | "linear" | "rpe";
+
+export const PROGRESSION_TYPES: {
+  value: ProgressionType;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "double",
+    label: "Double progression",
+    hint: "Add reps to the top of a range, then add weight",
+  },
+  {
+    value: "linear",
+    label: "Linear load",
+    hint: "Add a fixed amount every time you hit the target reps",
+  },
+  {
+    value: "rpe",
+    label: "RPE target",
+    hint: "Adjust weight to keep last set near a target RPE",
+  },
+];
+
+export type ProgressionRule = {
+  type: ProgressionType;
+  incrementWeight?: number;
+  minReps?: number; 
+  maxReps?: number; 
+  targetRpe?: number; 
+};
+
 export type Exercise = {
   id: string;
   name: string;
@@ -20,6 +52,7 @@ export type Exercise = {
   trackingMode?: TrackingMode;
   targetDurationSeconds?: number;
   targetDistance?: number;
+  progression?: ProgressionRule;
 };
 
 export type Plan = {
@@ -52,6 +85,7 @@ export type LoggedExercise = {
   trackingMode: TrackingMode;
   targetDurationSeconds?: number;
   targetDistance?: number;
+  progression?: ProgressionRule;
   sets: LoggedSet[];
 };
 

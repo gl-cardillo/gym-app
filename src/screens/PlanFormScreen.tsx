@@ -10,8 +10,14 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { getPlans, savePlan } from "../storage/plans";
-import type { Exercise, Plan, TrackingMode } from "../types";
-import { DEFAULT_TRACKING_MODE } from "../types";
+import type {
+  Exercise,
+  Plan,
+  ProgressionRule,
+  ProgressionType,
+  TrackingMode,
+} from "../types";
+import { DEFAULT_TRACKING_MODE, PROGRESSION_TYPES } from "../types";
 import { generateId } from "../utils/id";
 import {
   DEFAULT_REST_SECONDS,
@@ -27,7 +33,12 @@ import {
   LibraryExercise,
   MuscleGroup,
 } from "../storage/exerciseLibrary";
-import { getDistanceUnit, DistanceUnit } from "../storage/settings";
+import {
+  getDistanceUnit,
+  getWeightUnit,
+  DistanceUnit,
+  WeightUnit,
+} from "../storage/settings";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -42,6 +53,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [library, setLibrary] = useState<LibraryExercise[]>([]);
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>("mi");
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("lbs");
   const [muscleGroups, setMuscleGroups] = useState<
     Record<string, MuscleGroup | null>
   >({});
@@ -49,6 +61,7 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
   useEffect(() => {
     getExerciseLibrary().then(setLibrary);
     getDistanceUnit().then(setDistanceUnit);
+    getWeightUnit().then(setWeightUnit);
   }, []);
 
   useEffect(() => {
@@ -120,6 +133,37 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
         e.id === id ? { ...e, linkedToNext: !e.linkedToNext } : e,
       ),
     );
+  };
+
+  const setProgressionType = (
+    exercise: Exercise,
+    type: ProgressionType | null,
+  ) => {
+    if (type === null) {
+      updateExercise(exercise.id, { progression: undefined });
+      return;
+    }
+    const current = exercise.progression ?? ({} as Partial<ProgressionRule>);
+    const next: ProgressionRule = { ...current, type };
+    if (type === "double") {
+      const max = current.maxReps ?? (exercise.reps || 10);
+      next.maxReps = max;
+      next.minReps = current.minReps ?? Math.max(1, max - 2);
+    }
+    if (type === "rpe") {
+      next.targetRpe = current.targetRpe ?? 8;
+    }
+    updateExercise(exercise.id, { progression: next });
+  };
+
+  const patchProgression = (
+    exercise: Exercise,
+    changes: Partial<ProgressionRule>,
+  ) => {
+    if (!exercise.progression) return;
+    updateExercise(exercise.id, {
+      progression: { ...exercise.progression, ...changes },
+    });
   };
 
   const handleSave = async () => {
@@ -287,22 +331,25 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                 />
               </View>
 
-              {(mode === "weighted" || mode === "bodyweight") && (
-                <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>Reps</Text>
-                  <TextInput
-                    style={[styles.input, styles.numberInput]}
-                    value={String(exercise.reps)}
-                    onChangeText={(text) =>
-                      updateExercise(exercise.id, { reps: Number(text) || 0 })
-                    }
-                    placeholder="Reps"
-                    placeholderTextColor={colors.textFaint}
-                    keyboardType="number-pad"
-                    accessibilityLabel={`Reps for ${exercise.name || "exercise"}`}
-                  />
-                </View>
-              )}
+              {(mode === "weighted" || mode === "bodyweight") &&
+                exercise.progression?.type !== "double" && (
+                  <View style={styles.field}>
+                    <Text style={styles.fieldLabel}>Reps</Text>
+                    <TextInput
+                      style={[styles.input, styles.numberInput]}
+                      value={String(exercise.reps)}
+                      onChangeText={(text) =>
+                        updateExercise(exercise.id, { reps: Number(text) || 0 })
+                      }
+                      placeholder="Reps"
+                      placeholderTextColor={colors.textFaint}
+                      keyboardType="number-pad"
+                      accessibilityLabel={`Reps for ${
+                        exercise.name || "exercise"
+                      }`}
+                    />
+                  </View>
+                )}
 
               {(mode === "duration" || mode === "cardio") && (
                 <View style={styles.field}>
@@ -387,6 +434,187 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
                   Target: {formatDuration(exercise.targetDurationSeconds)}
                 </Text>
               )}
+
+            {(mode === "weighted" || mode === "bodyweight") && (
+              <View style={styles.progressionBlock}>
+                <Text style={styles.fieldLabel}>Progression</Text>
+                <View style={styles.progressionChips}>
+                  {(
+                    [
+                      { value: null, label: "Auto" },
+                      { value: "double", label: "Double" },
+                      { value: "linear", label: "Linear" },
+                      { value: "rpe", label: "RPE" },
+                    ] as { value: ProgressionType | null; label: string }[]
+                  ).map((option) => {
+                    const active =
+                      (exercise.progression?.type ?? null) === option.value;
+                    return (
+                      <Pressable
+                        key={option.label}
+                        style={[
+                          styles.progChip,
+                          active && styles.progChipActive,
+                        ]}
+                        onPress={() =>
+                          setProgressionType(exercise, option.value)
+                        }
+                        {...a11yOption(active, `${option.label} progression`)}
+                      >
+                        <Text
+                          style={[
+                            styles.progChipText,
+                            active && styles.progChipTextActive,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                {exercise.progression?.type === "double" && (
+                  <View style={styles.exerciseNumbersRow}>
+                    <View style={styles.field}>
+                      <Text style={styles.fieldLabel}>Min reps</Text>
+                      <TextInput
+                        style={[styles.input, styles.numberInput]}
+                        value={String(exercise.progression.minReps ?? "")}
+                        onChangeText={(text) =>
+                          patchProgression(exercise, {
+                            minReps: Number(text) || 0,
+                          })
+                        }
+                        keyboardType="number-pad"
+                        accessibilityLabel={`Minimum reps for ${
+                          exercise.name || "exercise"
+                        }`}
+                      />
+                    </View>
+                    <View style={styles.field}>
+                      <Text style={styles.fieldLabel}>Max reps</Text>
+                      <TextInput
+                        style={[styles.input, styles.numberInput]}
+                        value={String(exercise.progression.maxReps ?? "")}
+                        onChangeText={(text) => {
+                          const n = Number(text) || 0;
+                          updateExercise(exercise.id, {
+                            reps: n,
+                            progression: {
+                              ...exercise.progression!,
+                              maxReps: n,
+                            },
+                          });
+                        }}
+                        keyboardType="number-pad"
+                        accessibilityLabel={`Maximum reps for ${
+                          exercise.name || "exercise"
+                        }`}
+                      />
+                    </View>
+                    <View style={styles.field}>
+                      <Text style={styles.fieldLabel}>Step ({weightUnit})</Text>
+                      <TextInput
+                        style={[styles.input, styles.numberInput]}
+                        value={String(
+                          exercise.progression.incrementWeight ?? "",
+                        )}
+                        onChangeText={(text) =>
+                          patchProgression(exercise, {
+                            incrementWeight: Number(text) || undefined,
+                          })
+                        }
+                        placeholder="auto"
+                        placeholderTextColor={colors.textFaint}
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Weight step for ${
+                          exercise.name || "exercise"
+                        }`}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {exercise.progression?.type === "linear" && (
+                  <View style={styles.exerciseNumbersRow}>
+                    <View style={styles.field}>
+                      <Text style={styles.fieldLabel}>
+                        Add per session ({weightUnit})
+                      </Text>
+                      <TextInput
+                        style={[styles.input, styles.numberInput]}
+                        value={String(
+                          exercise.progression.incrementWeight ?? "",
+                        )}
+                        onChangeText={(text) =>
+                          patchProgression(exercise, {
+                            incrementWeight: Number(text) || undefined,
+                          })
+                        }
+                        placeholder="auto"
+                        placeholderTextColor={colors.textFaint}
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Weight added per session for ${
+                          exercise.name || "exercise"
+                        }`}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {exercise.progression?.type === "rpe" && (
+                  <View style={styles.exerciseNumbersRow}>
+                    <View style={styles.field}>
+                      <Text style={styles.fieldLabel}>Target RPE</Text>
+                      <TextInput
+                        style={[styles.input, styles.numberInput]}
+                        value={String(exercise.progression.targetRpe ?? "")}
+                        onChangeText={(text) =>
+                          patchProgression(exercise, {
+                            targetRpe: Number(text) || undefined,
+                          })
+                        }
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Target RPE for ${
+                          exercise.name || "exercise"
+                        }`}
+                      />
+                    </View>
+                    <View style={styles.field}>
+                      <Text style={styles.fieldLabel}>Step ({weightUnit})</Text>
+                      <TextInput
+                        style={[styles.input, styles.numberInput]}
+                        value={String(
+                          exercise.progression.incrementWeight ?? "",
+                        )}
+                        onChangeText={(text) =>
+                          patchProgression(exercise, {
+                            incrementWeight: Number(text) || undefined,
+                          })
+                        }
+                        placeholder="auto"
+                        placeholderTextColor={colors.textFaint}
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={`Weight step for ${
+                          exercise.name || "exercise"
+                        }`}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {exercise.progression?.type && (
+                  <Text style={styles.fieldHint}>
+                    {
+                      PROGRESSION_TYPES.find(
+                        (t) => t.value === exercise.progression?.type,
+                      )?.hint
+                    }
+                  </Text>
+                )}
+              </View>
+            )}
           </View>
           {index < exercises.length - 1 && (
             <Pressable
@@ -497,6 +725,33 @@ const createStyles = (colors: ColorTokens) =>
     field: { flexGrow: 1, flexBasis: 70, minWidth: 60 },
     fieldLabel: { fontSize: 11, color: colors.textFaint, marginBottom: 3 },
     fieldHint: { fontSize: 12, color: colors.textMuted, marginTop: 8 },
+    progressionBlock: {
+      marginTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 10,
+    },
+    progressionChips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginTop: 4,
+      marginBottom: 4,
+    },
+    progChip: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill,
+      paddingVertical: 5,
+      paddingHorizontal: 12,
+    },
+    progChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    progChipText: { fontSize: 12, color: colors.textMuted },
+    progChipTextActive: { color: colors.onAccent, fontWeight: "600" },
     restHintText: {
       fontSize: 12,
       color: colors.textMuted,

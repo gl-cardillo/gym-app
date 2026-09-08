@@ -204,7 +204,16 @@ const formatExerciseMeta = (
     return `${exercise.sets} sets${dist}${time} · ${rest}`;
   }
   const label = mode === 'bodyweight' ? 'bodyweight reps' : 'reps';
-  return `${exercise.sets} sets x ${exercise.reps} ${label} · ${rest}`;
+  const prog = exercise.progression;
+  if (prog?.type === 'double' && prog.minReps && prog.maxReps) {
+    return `${exercise.sets} sets x ${prog.minReps}–${prog.maxReps} ${label} · double progression · ${rest}`;
+  }
+  const progNote = prog
+    ? prog.type === 'linear'
+      ? ' · linear load'
+      : ` · RPE ${prog.targetRpe ?? 8}`
+    : '';
+  return `${exercise.sets} sets x ${exercise.reps} ${label}${progNote} · ${rest}`;
 };
 
 const countTotalSets = (workout: Workout): number => {

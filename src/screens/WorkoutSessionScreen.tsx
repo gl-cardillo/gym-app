@@ -322,6 +322,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
       ),
       exercise.targetReps,
       unit,
+      exercise.progression,
     );
     const workingWeight =
       loggedMax > 0 ? loggedMax : (suggestion?.suggestedWeight ?? 0);
@@ -695,6 +696,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                       ),
                       exercise.targetReps,
                       unit,
+                      exercise.progression,
                     );
                     if (!suggestion) return null;
                     return (
