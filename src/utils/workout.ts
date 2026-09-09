@@ -408,6 +408,63 @@ export const createWorkoutFromPlan = (
   };
 };
 
+/**
+ * Clone a past workout into a fresh one dated now: same exercises, targets,
+ * tracking modes, progression rules and set structure (warm-ups included).
+ * Working-set weights/reps are pre-filled from the same overload suggestion
+ * the plan flow uses, so repeating a workout still progresses the load.
+ */
+export const createWorkoutFromWorkout = (
+  source: Workout,
+  unit: WeightUnit = "lbs",
+): Workout => ({
+  id: generateId(),
+  planId: source.planId,
+  planName: source.planName,
+  startedAt: new Date().toISOString(),
+  completedAt: null,
+  exercises: source.exercises.map((exercise) => {
+    const suggestion = isWeightTracked(exercise.trackingMode)
+      ? getOverloadSuggestion(
+          exercise,
+          exercise.targetReps,
+          unit,
+          exercise.progression,
+        )
+      : null;
+    const prefillSets: SetPrefill[] = exercise.sets.map((set) =>
+      set.isWarmup
+        ? {
+            weight: set.weight,
+            reps: set.reps,
+            durationSeconds: set.durationSeconds,
+            distance: set.distance,
+            isWarmup: true,
+          }
+        : {
+            weight: suggestion ? suggestion.suggestedWeight : set.weight,
+            reps: suggestion ? suggestion.suggestedReps : set.reps,
+            durationSeconds: set.durationSeconds,
+            distance: set.distance,
+            isWarmup: false,
+          },
+    );
+    return createLoggedExercise({
+      name: exercise.name,
+      targetSets: Math.max(1, exercise.sets.length),
+      targetReps: exercise.targetReps,
+      restSeconds: exercise.restSeconds ?? DEFAULT_REST_SECONDS,
+      exerciseId: exercise.exerciseId,
+      prefillSets,
+      linkedToNext: exercise.linkedToNext ?? false,
+      trackingMode: exercise.trackingMode,
+      targetDurationSeconds: exercise.targetDurationSeconds,
+      targetDistance: exercise.targetDistance,
+      progression: exercise.progression,
+    });
+  }),
+});
+
 export const createEmptyWorkout = (): Workout => ({
   id: generateId(),
   planId: null,

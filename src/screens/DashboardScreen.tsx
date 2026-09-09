@@ -18,7 +18,11 @@ import {
 } from "../utils/stats";
 import { resolveTodaysWorkout, type TodaysWorkout } from "../utils/schedule";
 import { getDeloadModifier, getMesoWeekInfo } from "../utils/mesocycle";
-import { createEmptyWorkout, createWorkoutFromPlan } from "../utils/workout";
+import {
+  createEmptyWorkout,
+  createWorkoutFromPlan,
+  createWorkoutFromWorkout,
+} from "../utils/workout";
 import { a11yButton, a11yHeader, a11yLink } from "../utils/a11y";
 import type { Plan, Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
@@ -82,6 +86,12 @@ const DashboardScreen = ({ navigation }: Props) => {
 
   const handleQuickWorkout = async () => {
     const workout = createEmptyWorkout();
+    await saveWorkout(workout);
+    navigation.navigate("WorkoutSession", { workoutId: workout.id });
+  };
+
+  const handleRepeatWorkout = async (source: Workout) => {
+    const workout = createWorkoutFromWorkout(source, unit);
     await saveWorkout(workout);
     navigation.navigate("WorkoutSession", { workoutId: workout.id });
   };
@@ -231,26 +241,40 @@ const DashboardScreen = ({ navigation }: Props) => {
           Last workout
         </Text>
         {stats.lastCompletedWorkout ? (
-          <Pressable
-            style={styles.lastWorkoutCard}
-            onPress={() =>
-              navigation.navigate("WorkoutSession", {
-                workoutId: stats.lastCompletedWorkout!.id,
-              })
-            }
-            {...a11yButton(
-              `Last workout: ${stats.lastCompletedWorkout.planName}, ${formatDate(
-                stats.lastCompletedWorkout.completedAt as string,
-              )}`,
-            )}
-          >
-            <Text style={styles.lastWorkoutPlan}>
-              {stats.lastCompletedWorkout.planName}
-            </Text>
-            <Text style={styles.lastWorkoutDate}>
-              {formatDate(stats.lastCompletedWorkout.completedAt as string)}
-            </Text>
-          </Pressable>
+          <View style={styles.lastWorkoutCard}>
+            <Pressable
+              style={styles.lastWorkoutMain}
+              onPress={() =>
+                navigation.navigate("WorkoutSession", {
+                  workoutId: stats.lastCompletedWorkout!.id,
+                })
+              }
+              {...a11yButton(
+                `Last workout: ${
+                  stats.lastCompletedWorkout.planName
+                }, ${formatDate(
+                  stats.lastCompletedWorkout.completedAt as string,
+                )}`,
+              )}
+            >
+              <Text style={styles.lastWorkoutPlan}>
+                {stats.lastCompletedWorkout.planName}
+              </Text>
+              <Text style={styles.lastWorkoutDate}>
+                {formatDate(stats.lastCompletedWorkout.completedAt as string)}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={styles.repeatButton}
+              onPress={() => handleRepeatWorkout(stats.lastCompletedWorkout!)}
+              {...a11yButton(
+                `Repeat ${stats.lastCompletedWorkout.planName} workout`,
+                "Starts a new workout with the same exercises",
+              )}
+            >
+              <Text style={styles.repeatButtonText}>↻ Repeat</Text>
+            </Pressable>
+          </View>
         ) : (
           <Text style={styles.emptyText}>No completed workouts yet.</Text>
         )}
@@ -415,11 +439,27 @@ const createStyles = (colors: ColorTokens) =>
     },
     emptyText: { color: colors.textMuted, fontSize: 14 },
     lastWorkoutCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
       padding: 16,
       borderRadius: radius.lg,
       borderCurve: "continuous",
       backgroundColor: colors.surface,
       ...shadow.soft,
+    },
+    lastWorkoutMain: { flex: 1 },
+    repeatButton: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: radius.md,
+      borderCurve: "continuous",
+      paddingVertical: 9,
+      paddingHorizontal: 14,
+    },
+    repeatButtonText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: "700",
     },
     lastWorkoutPlan: { fontSize: 16, fontWeight: "700", color: colors.text },
     lastWorkoutDate: { color: colors.textMuted, marginTop: 2 },

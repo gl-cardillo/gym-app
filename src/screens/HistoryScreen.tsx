@@ -11,9 +11,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { TabScreenProps } from "../navigation/RootNavigator";
-import { deleteWorkout, getWorkouts } from "../storage/workouts";
+import { deleteWorkout, getWorkouts, saveWorkout } from "../storage/workouts";
 import { getWeightUnit, WeightUnit } from "../storage/settings";
-import { computeWorkoutVolume } from "../utils/workout";
+import {
+  computeWorkoutVolume,
+  createWorkoutFromWorkout,
+} from "../utils/workout";
 import type { Workout } from "../types";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
@@ -106,6 +109,12 @@ const HistoryScreen = ({ navigation }: Props) => {
     setSearchText("");
     setSelectedPlan(null);
     setDateRange("all");
+  };
+
+  const handleRepeat = async (workout: Workout) => {
+    const next = createWorkoutFromWorkout(workout, unit);
+    await saveWorkout(next);
+    navigation.navigate("WorkoutSession", { workoutId: next.id });
   };
 
   const handleDelete = (workout: Workout) => {
@@ -298,6 +307,17 @@ const HistoryScreen = ({ navigation }: Props) => {
                   </Text>
                 </Pressable>
                 <Pressable
+                  style={styles.repeatButton}
+                  onPress={() => handleRepeat(workout)}
+                  hitSlop={8}
+                  {...a11yButton(
+                    `Repeat ${formatDate(workout.startedAt)} ${workout.planName} workout`,
+                    "Starts a new workout with the same exercises",
+                  )}
+                >
+                  <Text style={styles.repeatButtonText}>↻</Text>
+                </Pressable>
+                <Pressable
                   style={styles.deleteButton}
                   onPress={() => handleDelete(workout)}
                   hitSlop={8}
@@ -434,6 +454,17 @@ const createStyles = (colors: ColorTokens) =>
     },
     workoutDate: { color: colors.textMuted, marginTop: 2 },
     workoutMeta: { color: colors.textMuted, marginTop: 2, fontSize: 12 },
+    repeatButton: {
+      width: 40,
+      alignSelf: "stretch",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    repeatButtonText: {
+      color: colors.primary,
+      fontSize: 18,
+      fontWeight: "700",
+    },
     deleteButton: {
       width: 40,
       alignSelf: "stretch",
