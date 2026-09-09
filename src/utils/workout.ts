@@ -12,6 +12,11 @@ import { generateId } from "./id";
 
 export const DEFAULT_REST_SECONDS = 90;
 
+export const REST_PRESETS = [30, 60, 90, 120, 180, 240] as const;
+
+export const formatRestPreset = (seconds: number): string =>
+  seconds < 60 ? `${seconds}s` : formatDuration(seconds);
+
 const WEIGHT_INCREMENT: Record<WeightUnit, number> = { kg: 2.5, lbs: 5 };
 
 export const isWeightTracked = (mode: TrackingMode | undefined): boolean =>

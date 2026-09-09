@@ -40,9 +40,11 @@ import {
   exerciseIdForName,
   formatDuration,
   formatOverloadSuggestion,
+  formatRestPreset,
   generateWarmupSets,
   getOverloadSuggestion,
   groupByLinkedToNext,
+  REST_PRESETS,
   resolveTrackingMode,
 } from "../utils/workout";
 import { generateId } from "../utils/id";
@@ -1111,6 +1113,31 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
                   accessibilityLabel="Rest seconds"
                 />
               </View>
+              <View style={styles.restPresetRow}>
+                {REST_PRESETS.map((preset) => {
+                  const active = newExerciseRest === String(preset);
+                  return (
+                    <Pressable
+                      key={preset}
+                      style={[
+                        styles.addExerciseModeChip,
+                        active && styles.addExerciseModeChipActive,
+                      ]}
+                      onPress={() => setNewExerciseRest(String(preset))}
+                      {...a11yOption(active, `Rest ${formatRestPreset(preset)}`)}
+                    >
+                      <Text
+                        style={[
+                          styles.addExerciseModeChipText,
+                          active && styles.addExerciseModeChipTextActive,
+                        ]}
+                      >
+                        {formatRestPreset(preset)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
               <View style={styles.addExerciseActions}>
                 <Pressable
                   style={styles.addExerciseConfirmButton}
@@ -1530,6 +1557,12 @@ const createStyles = (colors: ColorTokens) =>
       fontWeight: "600",
     },
     addExerciseRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
+    restPresetRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 8,
+    },
     addExerciseNumberInput: { flex: 1 },
     addExerciseActions: { flexDirection: "row", gap: 8 },
     addExerciseConfirmButton: {

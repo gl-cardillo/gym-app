@@ -21,8 +21,10 @@ import { DEFAULT_TRACKING_MODE, PROGRESSION_TYPES } from "../types";
 import { generateId } from "../utils/id";
 import {
   DEFAULT_REST_SECONDS,
+  REST_PRESETS,
   exerciseIdForName,
   formatDuration,
+  formatRestPreset,
   resolveTrackingMode,
 } from "../utils/workout";
 import ExerciseNameField from "../components/ExerciseNameField";
@@ -428,6 +430,41 @@ const PlanFormScreen = ({ route, navigation }: Props) => {
               )}
             </View>
 
+            {!exercise.linkedToNext && (
+              <View style={styles.restPresetRow}>
+                {REST_PRESETS.map((preset) => {
+                  const active = exercise.restSeconds === preset;
+                  return (
+                    <Pressable
+                      key={preset}
+                      style={[
+                        styles.restPresetChip,
+                        active && styles.restPresetChipActive,
+                      ]}
+                      onPress={() =>
+                        updateExercise(exercise.id, { restSeconds: preset })
+                      }
+                      {...a11yOption(
+                        active,
+                        `Rest ${formatRestPreset(preset)} for ${
+                          exercise.name || "exercise"
+                        }`,
+                      )}
+                    >
+                      <Text
+                        style={[
+                          styles.restPresetChipText,
+                          active && styles.restPresetChipTextActive,
+                        ]}
+                      >
+                        {formatRestPreset(preset)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+
             {(mode === "duration" || mode === "cardio") &&
               !!exercise.targetDurationSeconds && (
                 <Text style={styles.fieldHint}>
@@ -758,6 +795,26 @@ const createStyles = (colors: ColorTokens) =>
       fontStyle: "italic",
       paddingVertical: 10,
     },
+    restPresetRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginTop: 8,
+    },
+    restPresetChip: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      borderRadius: radius.pill,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+    },
+    restPresetChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    restPresetChipText: { fontSize: 12, color: colors.textMuted },
+    restPresetChipTextActive: { color: colors.onAccent, fontWeight: "600" },
     numberInput: {
       textAlign: "center",
       padding: 10,
