@@ -6,6 +6,7 @@ const LENGTH_UNIT_STORAGE_KEY = "gym-app:settings:lengthUnit";
 const DISTANCE_UNIT_STORAGE_KEY = "gym-app:settings:distanceUnit";
 const BAR_WEIGHT_STORAGE_KEY = "gym-app:settings:barWeight";
 const REMINDER_STORAGE_KEY = "gym-app:settings:trainingReminder";
+const BACKUP_REMINDER_STORAGE_KEY = "gym-app:settings:backupReminder";
 const LAST_BACKUP_STORAGE_KEY = "gym-app:settings:lastBackupAt";
 const LIFTER_SEX_STORAGE_KEY = "gym-app:settings:lifterSex";
 
@@ -149,6 +150,43 @@ export const getLastBackupAt = async (): Promise<string | null> => {
 
 export const setLastBackupAt = async (iso: string): Promise<void> => {
   await AsyncStorage.setItem(LAST_BACKUP_STORAGE_KEY, iso);
+};
+
+export type BackupReminderSettings = {
+  enabled: boolean;
+  intervalDays: number;
+};
+
+export const DEFAULT_BACKUP_REMINDER: BackupReminderSettings = {
+  enabled: false,
+  intervalDays: 14,
+};
+
+export const getBackupReminder =
+  async (): Promise<BackupReminderSettings> => {
+    const raw = await AsyncStorage.getItem(BACKUP_REMINDER_STORAGE_KEY);
+    if (!raw) return DEFAULT_BACKUP_REMINDER;
+    try {
+      const parsed = JSON.parse(raw) as Partial<BackupReminderSettings>;
+      return {
+        enabled: parsed.enabled === true,
+        intervalDays:
+          typeof parsed.intervalDays === "number" && parsed.intervalDays >= 1
+            ? Math.floor(parsed.intervalDays)
+            : DEFAULT_BACKUP_REMINDER.intervalDays,
+      };
+    } catch {
+      return DEFAULT_BACKUP_REMINDER;
+    }
+  };
+
+export const setBackupReminder = async (
+  settings: BackupReminderSettings,
+): Promise<void> => {
+  await AsyncStorage.setItem(
+    BACKUP_REMINDER_STORAGE_KEY,
+    JSON.stringify(settings),
+  );
 };
 
 export const convertStoredBarWeight = async (

@@ -44,11 +44,16 @@ import {
   getTrainingReminder,
   setTrainingReminder,
   type TrainingReminderSettings,
+  DEFAULT_BACKUP_REMINDER,
+  getBackupReminder,
+  setBackupReminder,
+  type BackupReminderSettings,
 } from "../storage/settings";
 import {
   refreshTrainingReminders,
   requestNotificationPermission,
 } from "../notifications/trainingReminders";
+import { refreshBackupReminders } from "../notifications/backupReminders";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
@@ -63,6 +68,8 @@ const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
 ];
 
 const IDLE_DAY_OPTIONS = [1, 2, 3, 4];
+
+const BACKUP_INTERVAL_OPTIONS = [7, 14, 30];
 
 const REMINDER_TIME_OPTIONS: { hour: number; minute: number; label: string }[] =
   [
@@ -86,6 +93,8 @@ const SettingsScreen = ({ navigation }: Props) => {
   const [reminder, setReminder] = useState<TrainingReminderSettings>(
     DEFAULT_TRAINING_REMINDER,
   );
+  const [backupReminder, setBackupReminderState] =
+    useState<BackupReminderSettings>(DEFAULT_BACKUP_REMINDER);
 
   useFocusEffect(
     useCallback(() => {
@@ -93,6 +102,7 @@ const SettingsScreen = ({ navigation }: Props) => {
       getLengthUnit().then(setLengthUnitState);
       getDistanceUnit().then(setDistanceUnitState);
       getTrainingReminder().then(setReminder);
+      getBackupReminder().then(setBackupReminderState);
       getLastBackupAt().then(setLastBackupAt);
     }, []),
   );
@@ -115,6 +125,26 @@ const SettingsScreen = ({ navigation }: Props) => {
       }
     }
     await applyReminder({ ...reminder, enabled });
+  };
+
+  const applyBackupReminder = async (next: BackupReminderSettings) => {
+    setBackupReminderState(next);
+    await setBackupReminder(next);
+    await refreshBackupReminders();
+  };
+
+  const toggleBackupReminder = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        Alert.alert(
+          "Notifications are off",
+          "Turn on notifications for this app in your device settings to get backup reminders.",
+        );
+        return;
+      }
+    }
+    await applyBackupReminder({ ...backupReminder, enabled });
   };
 
   const toggleUnit = async (next: WeightUnit) => {
@@ -154,6 +184,7 @@ const SettingsScreen = ({ navigation }: Props) => {
         return;
       }
       getLastBackupAt().then(setLastBackupAt);
+      await refreshBackupReminders();
     } catch {
       Alert.alert("Export failed", "Could not put together a backup file.");
     } finally {
@@ -166,6 +197,9 @@ const SettingsScreen = ({ navigation }: Props) => {
     getWeightUnit().then(setUnit);
     getTrainingReminder().then(setReminder);
     refreshTrainingReminders();
+    getBackupReminder().then(setBackupReminderState);
+    getLastBackupAt().then(setLastBackupAt);
+    refreshBackupReminders();
     Alert.alert(
       "Restore complete",
       `Restored ${count} record${count === 1 ? "" : "s"}.`,
@@ -432,6 +466,58 @@ const SettingsScreen = ({ navigation }: Props) => {
           Your data lives only on this device. Save a backup file regularly so a
           lost or reset phone doesn't take your training history with it.
         </Text>
+
+        <View style={[styles.switchRow, styles.backupReminderRow]}>
+          <View style={styles.switchTextWrap}>
+            <Text style={styles.switchLabel}>Backup reminder</Text>
+            <Text style={styles.helperText}>
+              A nudge to save a fresh backup file when it's been a while.
+            </Text>
+          </View>
+          <Switch
+            value={backupReminder.enabled}
+            onValueChange={toggleBackupReminder}
+            trackColor={{ true: colors.primary, false: colors.borderMuted }}
+            accessibilityLabel="Backup reminder"
+          />
+        </View>
+
+        {backupReminder.enabled && (
+          <>
+            <Text style={styles.reminderSubLabel} {...a11yHeader}>
+              Remind me every
+            </Text>
+            <View style={styles.segmentedRow}>
+              {BACKUP_INTERVAL_OPTIONS.map((days) => (
+                <Pressable
+                  key={days}
+                  style={[
+                    styles.segment,
+                    backupReminder.intervalDays === days && styles.segmentActive,
+                  ]}
+                  onPress={() =>
+                    applyBackupReminder({ ...backupReminder, intervalDays: days })
+                  }
+                  {...a11yOption(
+                    backupReminder.intervalDays === days,
+                    `${days} days`,
+                  )}
+                >
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      backupReminder.intervalDays === days &&
+                        styles.segmentTextActive,
+                    ]}
+                  >
+                    {days} days
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
+
         <Pressable
           style={[styles.primaryButton, isExporting && styles.buttonDisabled]}
           onPress={handleExport}
@@ -554,6 +640,7 @@ const createStyles = (colors: ColorTokens) =>
       textAlign: "center",
     },
     restoreButton: { marginTop: 16 },
+    backupReminderRow: { marginTop: 12 },
     switchRow: {
       flexDirection: "row",
       alignItems: "center",
