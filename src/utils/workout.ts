@@ -7,7 +7,7 @@ import {
   TrackingMode,
   Workout,
 } from "../types";
-import { WeightUnit } from "../storage/settings";
+import { DistanceUnit, WeightUnit } from "../storage/settings";
 import { generateId } from "./id";
 
 export const DEFAULT_REST_SECONDS = 90;
@@ -37,6 +37,45 @@ export const formatDuration = (totalSeconds: number): string => {
     ).padStart(2, "0")}`;
   }
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+};
+
+export type PRMetricFormat = {
+  label: string;
+  value: string;
+  previousValue: string;
+};
+
+export const formatPRMetric = (
+  pr: { trackingMode: TrackingMode; value: number; previousValue: number },
+  weightUnit: WeightUnit,
+  distanceUnit: DistanceUnit,
+): PRMetricFormat => {
+  switch (pr.trackingMode) {
+    case "bodyweight":
+      return {
+        label: "Most reps",
+        value: `${pr.value} reps`,
+        previousValue: `${pr.previousValue} reps`,
+      };
+    case "duration":
+      return {
+        label: "Longest hold",
+        value: formatDuration(pr.value),
+        previousValue: formatDuration(pr.previousValue),
+      };
+    case "cardio":
+      return {
+        label: "Farthest",
+        value: `${pr.value} ${distanceUnit}`,
+        previousValue: `${pr.previousValue} ${distanceUnit}`,
+      };
+    default:
+      return {
+        label: "Top weight",
+        value: `${pr.value} ${weightUnit}`,
+        previousValue: `${pr.previousValue} ${weightUnit}`,
+      };
+  }
 };
 
 export type RpeAdvice = "push" | "hold" | "backoff";

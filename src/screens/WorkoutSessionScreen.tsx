@@ -18,6 +18,7 @@ import {
   getWorkoutPRs,
   getWorkouts,
   saveWorkout,
+  type WorkoutPR,
 } from "../storage/workouts";
 import {
   getBarWeight,
@@ -54,6 +55,7 @@ import type { LoggedSet, TrackingMode, Workout } from "../types";
 import ExerciseNameField from "../components/ExerciseNameField";
 import PlateCalculatorModal from "../components/PlateCalculatorModal";
 import DateTimePickerModal from "../components/DateTimePickerModal";
+import PRShareModal from "../components/PRShareModal";
 import {
   getExerciseLibrary,
   upsertLibraryExercise,
@@ -80,6 +82,8 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
   const [barWeight, setBarWeightState] = useState<number>(45);
   const [plateTarget, setPlateTarget] = useState<number | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [sessionPRs, setSessionPRs] = useState<WorkoutPR[]>([]);
+  const [showPRModal, setShowPRModal] = useState(false);
   const [isAddingExercise, setIsAddingExercise] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
   const [newExerciseMode, setNewExerciseMode] = useState<TrackingMode>(
@@ -530,7 +534,7 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
     if (!workout) return;
     await cancelRestNotification();
     await clearRestTimer();
-    const prNames = await getWorkoutPRs(workout);
+    const prs = await getWorkoutPRs(workout);
     const startedMs = new Date(workout.startedAt).getTime();
     const todayStart = new Date().setHours(0, 0, 0, 0);
     const completedAt =
@@ -541,11 +545,10 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         : new Date().toISOString();
     await persist({ ...workout, completedAt });
     refreshTrainingReminders();
-    if (prNames.length > 0) {
+    if (prs.length > 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("New PR!", `${prNames.join(", ")}.`, [
-        { text: "Nice", onPress: () => navigation.goBack() },
-      ]);
+      setSessionPRs(prs);
+      setShowPRModal(true);
     } else {
       navigation.goBack();
     }
@@ -1277,6 +1280,17 @@ const WorkoutSessionScreen = ({ route, navigation }: Props) => {
         maximumDate={new Date()}
         onConfirm={handleChangeDate}
         onCancel={() => setShowDatePicker(false)}
+      />
+
+      <PRShareModal
+        visible={showPRModal}
+        prs={sessionPRs}
+        weightUnit={unit}
+        distanceUnit={distanceUnit}
+        onClose={() => {
+          setShowPRModal(false);
+          navigation.goBack();
+        }}
       />
     </View>
   );

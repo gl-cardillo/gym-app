@@ -127,8 +127,17 @@ const prMetric = (
   }
 };
 
-export const getWorkoutPRs = async (workout: Workout): Promise<string[]> => {
-  const prNames: string[] = [];
+export type WorkoutPR = {
+  exerciseId: string;
+  exerciseName: string;
+  trackingMode: TrackingMode;
+  value: number;
+  previousValue: number;
+  date: string;
+};
+
+export const getWorkoutPRs = async (workout: Workout): Promise<WorkoutPR[]> => {
+  const prs: WorkoutPR[] = [];
 
   for (const exercise of workout.exercises) {
     const history = await getExerciseHistory(exercise.exerciseId);
@@ -145,11 +154,18 @@ export const getWorkoutPRs = async (workout: Workout): Promise<string[]> => {
       }, null);
 
     if (priorBest !== null && sessionValue > priorBest) {
-      prNames.push(exercise.name || "Untitled");
+      prs.push({
+        exerciseId: exercise.exerciseId,
+        exerciseName: exercise.name || "Untitled",
+        trackingMode: thisEntry.trackingMode,
+        value: sessionValue,
+        previousValue: priorBest,
+        date: thisEntry.date,
+      });
     }
   }
 
-  return prNames;
+  return prs;
 };
 
 export type PersonalRecordEntry = {
@@ -167,6 +183,21 @@ export type PersonalRecord = {
   bestEstimatedOneRepMax: PersonalRecordEntry | null;
   bestDurationSeconds: PersonalRecordEntry | null;
   bestDistance: PersonalRecordEntry | null;
+};
+
+export const primaryRecordMetric = (
+  record: PersonalRecord,
+): PersonalRecordEntry | null => {
+  switch (record.trackingMode) {
+    case "bodyweight":
+      return record.bestReps;
+    case "duration":
+      return record.bestDurationSeconds;
+    case "cardio":
+      return record.bestDistance;
+    default:
+      return record.bestWeight;
+  }
 };
 
 export const getPersonalRecords = async (): Promise<PersonalRecord[]> => {

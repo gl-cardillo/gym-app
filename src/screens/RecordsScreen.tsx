@@ -3,7 +3,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { TabScreenProps } from "../navigation/RootNavigator";
-import { getPersonalRecords, PersonalRecord } from "../storage/workouts";
+import {
+  getPersonalRecords,
+  primaryRecordMetric,
+  PersonalRecord,
+} from "../storage/workouts";
 import {
   getDistanceUnit,
   getWeightUnit,
@@ -15,6 +19,7 @@ import { a11yButton, a11yLink } from "../utils/a11y";
 import { useTheme } from "../theme/ThemeContext";
 import type { ColorTokens } from "../theme/colors";
 import { radius, shadow } from "../theme/tokens";
+import PRShareModal, { type PRShareEntry } from "../components/PRShareModal";
 
 type Props = TabScreenProps<"Records">;
 
@@ -96,6 +101,7 @@ const RecordsScreen = ({ navigation }: Props) => {
   const [records, setRecords] = useState<PersonalRecord[]>([]);
   const [unit, setUnit] = useState<WeightUnit>("lbs");
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>("mi");
+  const [sharePR, setSharePR] = useState<PRShareEntry | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -105,9 +111,23 @@ const RecordsScreen = ({ navigation }: Props) => {
     }, []),
   );
 
+  const handleShare = (record: PersonalRecord) => {
+    const primary = primaryRecordMetric(record);
+    if (!primary) return;
+    setSharePR({
+      exerciseId: record.exerciseId,
+      exerciseName: record.exerciseName,
+      trackingMode: record.trackingMode,
+      value: primary.value,
+      previousValue: null,
+      date: primary.date,
+    });
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <ScrollView contentContainerStyle={styles.content}>
         <Pressable
           style={styles.trendsLink}
           onPress={() => navigation.navigate("Goals")}
@@ -189,7 +209,20 @@ const RecordsScreen = ({ navigation }: Props) => {
                   "View progress",
                 )}
               >
-                <Text style={styles.exerciseName}>{record.exerciseName}</Text>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.exerciseName}>
+                    {record.exerciseName}
+                  </Text>
+                  <Pressable
+                    style={styles.shareIconButton}
+                    onPress={() => handleShare(record)}
+                    {...a11yButton(
+                      `Share ${record.exerciseName} personal record`,
+                    )}
+                  >
+                    <Text style={styles.shareIconText}>↗</Text>
+                  </Pressable>
+                </View>
                 <View style={styles.statsRow}>
                   {cells.map((cell) => (
                     <View key={cell.label} style={styles.statCell}>
@@ -205,8 +238,17 @@ const RecordsScreen = ({ navigation }: Props) => {
             );
           })
         )}
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+
+      <PRShareModal
+        visible={!!sharePR}
+        prs={sharePR ? [sharePR] : []}
+        weightUnit={unit}
+        distanceUnit={distanceUnit}
+        onClose={() => setSharePR(null)}
+      />
+    </>
   );
 };
 
@@ -246,12 +288,28 @@ const createStyles = (colors: ColorTokens) =>
       marginBottom: 12,
       ...shadow.soft,
     },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
     exerciseName: {
+      flex: 1,
       fontSize: 16,
       fontWeight: "700",
       color: colors.text,
       letterSpacing: -0.2,
     },
+    shareIconButton: {
+      width: 30,
+      height: 30,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surfaceAlt,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    shareIconText: { fontSize: 15, fontWeight: "700", color: colors.textMuted },
     statsRow: { flexDirection: "row", marginTop: 14 },
     statCell: { flex: 1, alignItems: "center" },
     statValue: { fontSize: 18, fontWeight: "800", color: colors.primary },
